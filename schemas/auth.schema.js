@@ -10,4 +10,9 @@ export const authSchema = Joi.object({
     .trim()
     .required(),
   password: Joi.string().pattern(passwordRegex).required(),
+  username: Joi.string().alphanum().min(3).max(30).trim().required(),
+});
+
+export const shemaUsername = Joi.object({
+  username: Joi.string().alphanum().min(3).max(30).trim().optional(),
 });

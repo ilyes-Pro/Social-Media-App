@@ -33,4 +33,4 @@ export function GetPublicId(url) {
 
 // How to delete img in cloudinary
 
-cloudinary.uploader.destroy(publicId);
+// cloudinary.uploader.destroy(publicId);

@@ -1,13 +1,10 @@
 import passport from 'passport';
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
 import pool from './db.js';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 const opts = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-  secretOrKey: ACCESS_TOKEN_SECRET,
+  secretOrKey: process.env.ACCESS_TOKEN_SECRET,
 };
 
 passport.use(
