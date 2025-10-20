@@ -1,14 +1,25 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import db from '../config/db.js';
+import { createClient } from 'redis';
+import crypto from 'crypto';
 import {
   generateAccessToken,
   generateRefreshToken,
   setRefreshCookie,
   clearRefreshCookie,
 } from '../config/token.js';
+import {
+  sendVerificationEmail,
+  sendWelcomeEmail,
+  sendPasswordResetEmail,
+} from '../config/Eamil.js';
 import { GetPublicId } from '../config/Cloudinary.js';
 import { v2 as cloudinary } from 'cloudinary';
+
+const redis = createClient();
+redis.on('error', (err) => console.error('❌ Redis error:', err));
+await redis.connect();
 
 export const register = async (req, res) => {
   const { email, password, username } = req.body;
@@ -27,22 +38,22 @@ export const register = async (req, res) => {
     if (userExists.rows[0]) {
       return res.status(404).json({ error: 'Email is exist ' });
     }
+
+    const verificationCode = Math.floor(
+      100000 + Math.random() * 900000
+    ).toString();
+    await redis.set(`verificationCode:${email}`, verificationCode, {
+      EX: 15 * 60,
+    }); // صلاحية الكود 15 دقيقة
+
+    await sendVerificationEmail(email, verificationCode);
     const hashedPassword = await bcrypt.hash(password, 12);
 
     const result = await db.query(
       'INSERT INTO project02.users (username,img_user,email,password) VALUES ($1,$2,$3,$4) RETURNING id_user,username,img_user,email',
       [username, imge, email, hashedPassword]
     );
-    const payload = {
-      id: result.rows[0].id_user,
-      email: result.rows[0].email,
-      username: result.rows[0].username,
-    };
-
-    const accessToken = generateAccessToken(payload);
-    const refreshToken = generateRefreshToken(payload);
-    setRefreshCookie(res, refreshToken);
-    res.status(201).json({ accessToken: accessToken });
+    res.status(200).json({ message: 'Verification code sent to email' });
   } catch (error) {
     process.env.NODE_ENV === 'development' &&
       console.log('❌ Error in login:', error);
@@ -52,14 +63,51 @@ export const register = async (req, res) => {
   }
 };
 
+export const verify = async (req, res) => {
+  const { email, code } = req.body;
+
+  try {
+    const storedCode = await redis.get(`verificationCode:${email}`);
+    if (!storedCode) {
+      return res.status(400).json({ message: 'Code expired or invalid' });
+    }
+
+    if (storedCode !== code) {
+      return res.status(400).json({ message: 'Invalid code' });
+    }
+    const result = await db.query(
+      'UPDATE project02.users SET is_verified = true WHERE email = $1 RETURNING *',
+      [email]
+    );
+
+    const user = result.rows[0];
+    if (!user)
+      return res
+        .status(400)
+        .json({ message: 'User not found or already verified' });
+    const payload = {
+      id: user.id_user,
+      email: user.email,
+      username: user.username,
+    };
+
+    const accessToken = generateAccessToken(payload);
+    const refreshToken = generateRefreshToken(payload);
+    setRefreshCookie(res, refreshToken);
+
+    await redis.del(`verificationCode:${email}`);
+    await sendWelcomeEmail(email, user.username);
+    res.status(200).json({
+      message: 'Email verified successfully',
+      accessToken: accessToken,
+    });
+  } catch (error) {
+    return res.status(500).json(error);
+  }
+};
+
 export const login = async (req, res) => {
   const { email, password } = req.body;
-
-  if (!email || !password) {
-    return res
-      .status(404)
-      .json({ error: 'Email and password or username in not exist ' });
-  }
 
   try {
     const userExists = await db.query(
@@ -74,6 +122,9 @@ export const login = async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
       return res.status(404).json({ error: 'password or Email is not exist' });
+    }
+    if (!user.is_verified) {
+      return res.status(403).json({ error: 'Email not verified' });
     }
     const payload = {
       id: user.id_user,
@@ -119,6 +170,61 @@ export const token = (req, res) => {
 export const logout = (req, res) => {
   clearRefreshCookie(res);
   res.json({ message: 'Logged out' });
+};
+
+export const forgotPassword = async (req, res) => {
+  const email = req.body.email;
+
+  try {
+    const userExists = await db.query(
+      'SELECT * FROM project02.users WHERE email=$1 ',
+      [email]
+    );
+    const user = userExists.rows[0];
+    if (!user) {
+      return res.status(404).json({ error: 'Email is NOT exist ' });
+    }
+
+    const resetToken = crypto.randomBytes(20).toString('hex');
+    await redis.set(`forgotPassword:${email}`, resetToken, 'EX', 3600);
+
+    await sendPasswordResetEmail(user.email, resetToken);
+
+    return res.status(200).json({
+      message: 'Password reset link sent to your email',
+    });
+  } catch (err) {
+    console.log('❌ Error in forgotPassword:', err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  const { password, email } = req.body;
+  const { resetTokenURL } = req.params;
+
+  try {
+    const resetToken = await redis.get(`forgotPassword:${email}`);
+    console.log('🔄 resetToken from Redis:', resetToken);
+    console.log('🔄 resetToken from params:', resetTokenURL);
+    if (resetToken !== resetTokenURL) {
+      return res
+        .status(400)
+        .json({ message: 'Invalid or expired reset token' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    const result = await db.query(
+      'UPDATE project02.users SET password=$1 WHERE email=$2',
+      [hashedPassword, email]
+    );
+    await redis.del(`forgotPassword:${email}`);
+
+    return res.status(200).json({ message: 'Update password is done' });
+  } catch (err) {
+    return res.status(500).json({ error: 'Server error' });
+  }
 };
 
 export const UdateProfile = async (req, res) => {

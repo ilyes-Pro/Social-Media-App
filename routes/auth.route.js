@@ -7,6 +7,9 @@ import {
   logout,
   token,
   UdateProfile,
+  verify,
+  forgotPassword,
+  resetPassword,
 } from '../controllers/auth.controller.js';
 import authLimiter from '../config/rateLimit.js';
 import { Upload } from '../config/Cloudinary.js';
@@ -28,5 +31,8 @@ router.patch(
   Upload.single('image'),
   UdateProfile
 );
+router.post('/verify', verify);
+router.post('/forgotPassword', forgotPassword);
+router.patch('/resetPassword/:resetTokenURL', resetPassword);
 
 export default router;
