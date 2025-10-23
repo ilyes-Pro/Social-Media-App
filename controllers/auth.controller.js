@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import db from '../config/db.js';
-import { createClient } from 'redis';
+
 import crypto from 'crypto';
 import {
   generateAccessToken,
@@ -17,13 +17,11 @@ import {
 import { GetPublicId } from '../config/Cloudinary.js';
 import { v2 as cloudinary } from 'cloudinary';
 
-const redis = createClient();
-redis.on('error', (err) => console.error('❌ Redis error:', err));
-await redis.connect();
+import redis from '../config/redis.js';
 
 export const register = async (req, res) => {
   const { email, password, username } = req.body;
-  const imge = req.file.path;
+
   if (!email || !password || !username) {
     return res
       .status(404)
@@ -42,21 +40,49 @@ export const register = async (req, res) => {
     const verificationCode = Math.floor(
       100000 + Math.random() * 900000
     ).toString();
-    await redis.set(`verificationCode:${email}`, verificationCode, {
-      EX: 15 * 60,
-    }); // صلاحية الكود 15 دقيقة
+    await redis.set(
+      `verificationCode:${email}`,
+      verificationCode,
+      'EX',
+      15 * 60
+    );
 
     await sendVerificationEmail(email, verificationCode);
     const hashedPassword = await bcrypt.hash(password, 12);
 
     const result = await db.query(
-      'INSERT INTO project02.users (username,img_user,email,password) VALUES ($1,$2,$3,$4) RETURNING id_user,username,img_user,email',
-      [username, imge, email, hashedPassword]
+      'INSERT INTO project02.users (username,email,password) VALUES ($1,$2,$3) RETURNING id_user,username,email',
+      [username, email, hashedPassword]
     );
     res.status(200).json({ message: 'Verification code sent to email' });
   } catch (error) {
-    process.env.NODE_ENV === 'development' &&
-      console.log('❌ Error in login:', error);
+    console.log('❌ Error in register:', error);
+    res.status(500).json({
+      error: 'Server error',
+    });
+  }
+};
+
+export const UploadProfile = async (req, res) => {
+  const email = req.body.email;
+  const imge = req.file.path;
+
+  try {
+    if (!imge || !email) {
+      return res
+        .status(404)
+        .json({ error: 'please upload imge and provide email' });
+    }
+
+    const user = await db.query(
+      'UPDATE project02.users SET img_user=$1 WHERE email=$2 RETURNING *',
+      [imge, email]
+    );
+    if (!user.rows[0] || !user.rows[0].is_verified) {
+      return res.status(400).json({ error: 'User not found or not verified' });
+    }
+    res.status(200).json(user.rows[0]);
+  } catch (error) {
     res.status(500).json({
       error: 'Server error',
     });
@@ -68,6 +94,7 @@ export const verify = async (req, res) => {
 
   try {
     const storedCode = await redis.get(`verificationCode:${email}`);
+    console.log('🔄 storedCode from Redis:', storedCode);
     if (!storedCode) {
       return res.status(400).json({ message: 'Code expired or invalid' });
     }

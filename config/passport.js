@@ -11,7 +11,7 @@ passport.use(
   new JwtStrategy(opts, async (jwt_payload, done) => {
     try {
       const result = await pool.query(
-        'SELECT id, email FROM userss WHERE id=$1',
+        'SELECT id_user, email FROM project02.users WHERE id_user=$1',
         [jwt_payload.id]
       );
       if (result.rows.length > 0) {

@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import authRouter from './routes/auth.route.js';
 import Cors from './config/Cors.js';
 import httpsRedirect from './middleware/httpsRedirect.js';
+import fileFilter from './middleware/filterImg.js';
 import cookieParser from 'cookie-parser';
 
 import passport from 'passport';
@@ -14,6 +15,7 @@ dotenv.config();
 const app = express();
 
 app.use(helmet());
+
 if (process.env.NODE_ENV === 'production') {
   app.use(Cors());
   app.use(httpsRedirect);

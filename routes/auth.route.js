@@ -1,6 +1,10 @@
 import express from 'express';
 import validate from '../middleware/validate.js';
-import { authSchema, shemaUsername } from '../schemas/auth.schema.js';
+import {
+  authSchema,
+  shemaUsername,
+  shemaPassword,
+} from '../schemas/auth.schema.js';
 import {
   register,
   login,
@@ -10,29 +14,40 @@ import {
   verify,
   forgotPassword,
   resetPassword,
+  UploadProfile,
 } from '../controllers/auth.controller.js';
 import authLimiter from '../config/rateLimit.js';
 import { Upload } from '../config/Cloudinary.js';
+import passport from 'passport';
+import '../config/passport.js';
 
 const router = express.Router();
+
+router.post('/register', authLimiter, validate(authSchema), register);
+router.post('/verify', authLimiter, verify);
 router.post(
-  '/register',
-  authLimiter,
+  '/UploadProfileImage',
+  passport.authenticate('jwt', { session: false }),
   Upload.single('image'),
-  validate(authSchema),
-  register
+  UploadProfile
 );
+
 router.post('/login', authLimiter, login);
+router.post('/forgotPassword', forgotPassword);
+router.patch(
+  '/resetPassword/:resetTokenURL',
+  validate(shemaPassword),
+  resetPassword
+);
+
 router.post('/logout', logout);
 router.post('/token', token);
+
 router.patch(
-  '/UdateProfile/:id',
+  '/UpdateProfile/:id',
+  passport.authenticate('jwt', { session: false }),
   validate(shemaUsername),
   Upload.single('image'),
   UdateProfile
 );
-router.post('/verify', verify);
-router.post('/forgotPassword', forgotPassword);
-router.patch('/resetPassword/:resetTokenURL', resetPassword);
-
 export default router;

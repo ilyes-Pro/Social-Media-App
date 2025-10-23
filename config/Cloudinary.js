@@ -1,6 +1,7 @@
 import multer from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import fileFilter from '../middleware/filterImg.js';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -19,7 +20,7 @@ const storage = new CloudinaryStorage({
   },
 });
 
-export const Upload = multer({ storage });
+export const Upload = multer({ storage, fileFilter });
 
 export function GetPublicId(url) {
   // الرابط: https://res.cloudinary.com/<cloud_name>/image/upload/v1234567890/prodactADD/filename.jpg
