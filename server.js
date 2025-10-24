@@ -6,7 +6,8 @@ import Cors from './config/Cors.js';
 import httpsRedirect from './middleware/httpsRedirect.js';
 import fileFilter from './middleware/filterImg.js';
 import cookieParser from 'cookie-parser';
-
+import userRouter from './routes/user.route.js';
+import postRouter from './routes/posts.route.js';
 import passport from 'passport';
 import './config/passport.js';
 import dotenv from 'dotenv';
@@ -27,6 +28,9 @@ app.use(cookieParser());
 app.use(passport.initialize());
 
 app.use('/api/auth', authRouter);
+app.use('/api/users', userRouter);
+app.use('/api/posts', postRouter);
+
 const port = process.env.PORT;
 
 app.listen(port, () => {
