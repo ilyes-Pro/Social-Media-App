@@ -63,11 +63,18 @@ export const showUser = async (req, res) => {
     );
     const posts_count = parseInt(postResult.rows[0].contpost);
 
+    const likeResult = await db.query(
+      `SELECT COUNT(*) AS contLike FROM project02.likes WHERE id_user = $1`,
+      [id]
+    );
+    const likes_count = parseInt(likeResult.rows[0].contlike);
+
     return res.status(200).json({
       user: userResult.rows[0],
       stats: {
         comments_count,
         posts_count,
+        likes_count,
       },
     });
   } catch (error) {
@@ -97,5 +104,39 @@ export const searchUser = async (req, res) => {
   } catch (error) {
     console.error('❌ Error in searchUser:', error);
     return res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+export const userPosts = async (req, res) => {
+  const id = parseInt(req.params.id);
+  const limite = req.query.limite || 15;
+  const page = req.query.page || 1;
+
+  try {
+    const totalPostsResult = await db.query(
+      'SELECT COUNT(*) AS total_posts FROM project02.posts WHERE id_user = $1',
+      [id]
+    );
+    const total_posts = parseInt(totalPostsResult.rows[0].total_posts);
+
+    const result = await db.query(
+      'SELECT id_post, img_post, body_post, created_at FROM project02.posts WHERE id_user = $1 LIMIT $2 OFFSET $3',
+      [id, limite, (page - 1) * limite]
+    );
+
+    const posts = result.rows;
+    res.status(200).json({
+      data: posts,
+      meta: {
+        current_page: page,
+        last_page: Math.ceil(total_posts / limite),
+        per_page: limite,
+        total_posts: total_posts,
+        from: (page - 1) * limite + 1,
+        to: (page - 1) * limite + posts.length,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json(error);
   }
 };

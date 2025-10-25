@@ -13,7 +13,7 @@ export const generateAccessToken = (user) =>
 
 // 🔹 توليد refresh token
 export const generateRefreshToken = (user) =>
-  jwt.sign(user, 'f98as7df9as7df9a8s7df9a8s7df9a', {
+  jwt.sign(user, REFRESH_TOKEN_SECRET, {
     expiresIn: `${REFRESH_TOKEN_TTL_DAYS}d`,
   });
 

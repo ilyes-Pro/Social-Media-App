@@ -9,7 +9,10 @@ import cookieParser from 'cookie-parser';
 import userRouter from './routes/user.route.js';
 import postRouter from './routes/posts.route.js';
 import passport from 'passport';
+import tagRouter from './routes/tage.route.js';
 import './config/passport.js';
+import commentRouter from './routes/comments.router.js';
+import likeRouter from './routes/like.route.js';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -30,6 +33,9 @@ app.use(passport.initialize());
 app.use('/api/auth', authRouter);
 app.use('/api/users', userRouter);
 app.use('/api/posts', postRouter);
+app.use('/api/comments', commentRouter);
+app.use('/api/likes', likeRouter);
+app.use('/api/tags', tagRouter);
 
 const port = process.env.PORT;
 
