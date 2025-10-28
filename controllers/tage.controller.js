@@ -159,47 +159,155 @@ export const createTag = async (req, res) => {
   }
 };
 
+// export const getPostByTagId = async (req, res) => {
+//   try {
+//     const id_tag = parseInt(req.params.id);
+//     const page = parseInt(req.query.page) || 1;
+//     const limit = parseInt(req.query.limit) || 10;
+//     const offset = (page - 1) * limit;
+
+//     if (isNaN(id_tag)) {
+//       return res.status(400).json({ message: 'Invalid tag ID' });
+//     }
+
+//     // ✅ تحقق من وجود المنشور
+//     const postExists = await db.query(
+//       'SELECT 1 FROM project02.tags WHERE id_tag = $1',
+//       [id_tag]
+//     );
+//     if (postExists.rows.length === 0) {
+//       return res.status(404).json({ message: 'Tag not found' });
+//     }
+
+//     const results = await db.query(
+//       `SELECT p.*, t.body_tag , u.username, u.email, u.img_user, u.is_verified, p.created_at AS post_created_at,u.id_user, c.count(*) AS comment_count, l.count(*) AS likes
+//        FROM project02.post_tags pt
+//        JOIN project02.posts p ON pt.id_post = p.id_post
+//        JOIN project02.tags t ON pt.id_tag = t.id_tag
+//        JOIN project02.users u ON p.id_user = u.id_user
+//        JOIN project02.comments c ON p.id_post = c.id_post
+//        JOIN project02.likes l ON p.id_post = l.id_post
+//        WHERE pt.id_tag = $1  LIMIT $2 OFFSET $3`,
+//       [id_tag, limit, offset]
+//     );
+
+//     const postMap = results.rows.map((a) => ({
+//       id_post: a.id_post,
+//       body_post: a.body_post,
+//       img_post: a.img_post,
+//       created_at: dayjs(a.post_created_at).fromNow(),
+//       author: {
+//         id_user: a.id_user,
+//         username: a.username,
+//         img_user: a.img_user,
+//         email: a.email,
+//         is_verified: a.is_verified,
+//       },
+//       comments_count:
+//         Rcomments.rows.find((c) => c.id_post === a.id_post)?.comment_count || 0,
+
+//       like: Rlike.rows.find((c) => c.id_post === a.id_post)?.likes || 0,
+//     }));
+
+//     // 📦 7. إرسال النتيجة النهائية مع بيانات الـ pagination
+//     return res.status(200).json({
+//       meta: {
+//         current_page: page,
+//         last_page: Math.ceil(total_posts / limit),
+//         per_page: limit,
+//         total_posts,
+//         from: (page - 1) * limit + 1,
+//         to: (page - 1) * limit + result.rows.length,
+//       },
+//       data: postMap,
+//     });
+//   } catch (error) {
+//     console.error('Error fetching tags:', error);
+//     return res.status(500).json({ error: ' server error' });
+//   }
+// };
+
 export const getPostByTagId = async (req, res) => {
   try {
     const id_tag = parseInt(req.params.id);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
 
     if (isNaN(id_tag)) {
       return res.status(400).json({ message: 'Invalid tag ID' });
     }
 
-    // ✅ تحقق من وجود المنشور
-    const postExists = await db.query(
+    // ✅ تحقق من وجود الوسم
+    const tagExists = await db.query(
       'SELECT 1 FROM project02.tags WHERE id_tag = $1',
       [id_tag]
     );
-    if (postExists.rows.length === 0) {
+    if (tagExists.rows.length === 0) {
       return res.status(404).json({ message: 'Tag not found' });
     }
 
-    const results = await db.query(
-      `SELECT p.*, t.body_tag
+    // ✅ العدد الكلي للمنشورات
+    const totalResult = await db.query(
+      `SELECT COUNT(DISTINCT p.id_post) AS total
        FROM project02.post_tags pt
        JOIN project02.posts p ON pt.id_post = p.id_post
-       JOIN project02.tags t ON pt.id_tag = t.id_tag
        WHERE pt.id_tag = $1`,
       [id_tag]
     );
-    // const id_posts = results.rows.map(row => row.id_post);
-    // id_posts.map(async (id_post) => {
-    //   const usePost = await db.query(
-    //     `SELECT COUNT(*) AS usage_count
-    //      FROM project02.post_tags
-    //      WHERE id_tag = $1`,
-    //     [id_post]
-    //   );
-    // });
+    const total_posts = parseInt(totalResult.rows[0].total);
+
+    // ✅ جلب المنشورات
+    const results = await db.query(
+      `SELECT 
+        p.id_post,
+        p.body_post,
+        p.img_post,
+        p.created_at AS post_created_at,
+        u.id_user, u.username, u.email, u.img_user, u.is_verified,
+        t.body_tag,
+        (SELECT COUNT(*) FROM project02.comments c WHERE c.id_post = p.id_post) AS comment_count,
+        (SELECT COUNT(*) FROM project02.likes l WHERE l.id_post = p.id_post) AS like_count
+      FROM project02.post_tags pt
+      JOIN project02.posts p ON pt.id_post = p.id_post
+      JOIN project02.tags t ON pt.id_tag = t.id_tag
+      JOIN project02.users u ON p.id_user = u.id_user
+      WHERE pt.id_tag = $1
+      ORDER BY p.created_at DESC
+      LIMIT $2 OFFSET $3`,
+      [id_tag, limit, offset]
+    );
+
+    const data = results.rows.map((a) => ({
+      id_post: a.id_post,
+      body_post: a.body_post,
+      img_post: a.img_post,
+      created_at: a.post_created_at,
+      author: {
+        id_user: a.id_user,
+        username: a.username,
+        img_user: a.img_user,
+        email: a.email,
+        is_verified: a.is_verified,
+      },
+      tag: a.body_tag,
+      comments_count: a.comment_count,
+      like_count: a.like_count,
+    }));
 
     return res.status(200).json({
-      message: 'Posts fetched successfully',
-      data: results.rows,
+      meta: {
+        current_page: page,
+        last_page: Math.ceil(total_posts / limit),
+        per_page: limit,
+        total_posts,
+        from: offset + 1,
+        to: offset + data.length,
+      },
+      data,
     });
   } catch (error) {
     console.error('Error fetching tags:', error);
-    return res.status(500).json({ error: ' server error' });
+    return res.status(500).json({ error: 'Server error' });
   }
 };

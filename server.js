@@ -13,6 +13,7 @@ import tagRouter from './routes/tage.route.js';
 import './config/passport.js';
 import commentRouter from './routes/comments.router.js';
 import likeRouter from './routes/like.route.js';
+import friendships from './routes/friendships.route.js';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -36,6 +37,7 @@ app.use('/api/posts', postRouter);
 app.use('/api/comments', commentRouter);
 app.use('/api/likes', likeRouter);
 app.use('/api/tags', tagRouter);
+app.use('/api/friendships', friendships);
 
 const port = process.env.PORT;
 
