@@ -1,14 +1,29 @@
 import express from 'express';
 
-import { friendReq } from '../controllers/friendships.controller.js';
+import {
+  SendAcceptRequerst,
+  Cancel_reauest_sender_receiver,
+  Unfriend,
+} from '../controllers/friendships.controller.js';
 import passport from 'passport';
 
 const router = express.Router();
 
 router.post(
-  '/friendReqt/:id',
+  '/SendAcceptRequerst/:id',
   passport.authenticate('jwt', { session: false }),
-  friendReq
+  SendAcceptRequerst
+);
+
+router.delete(
+  '/Cancel/:id',
+  passport.authenticate('jwt', { session: false }),
+  Cancel_reauest_sender_receiver
+);
+router.delete(
+  '/Unfriend/:id',
+  passport.authenticate('jwt', { session: false }),
+  Unfriend
 );
 
 export default router;
