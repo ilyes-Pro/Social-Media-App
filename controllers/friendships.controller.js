@@ -256,3 +256,176 @@ export const Unfriend = async (req, res) => {
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+export const showReqFriend = async (req, res) => {
+  try {
+    const id_user = parseInt(req.params.id);
+
+    if (isNaN(id_user)) {
+      return res.status(400).json({ message: 'Invalid user ID' });
+    }
+
+    // ✅ تحقق من وجود المستخدم
+    const friendExists = await db.query(
+      'SELECT 1 FROM project02.users WHERE id_user = $1',
+      [id_user]
+    );
+    if (friendExists.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // ✅ جلب الطلبات المرسلة إلى المستخدم (الواردة)
+    const result = await db.query(
+      `
+      SELECT 
+        array_agg(id_user) AS pending_senders,
+        (SELECT COUNT(*) 
+         FROM project02.friendships 
+         WHERE id_friend = $1 AND status = FALSE) AS pending_count
+      FROM project02.friendships 
+      WHERE id_friend = $1 AND status = FALSE
+      `,
+      [id_user]
+    );
+
+    const Fr = result.rows[0].pending_senders;
+    const Cf = result.rows[0].pending_count;
+
+    // ✅ لا توجد طلبات
+    if (!Fr || Fr.length === 0) {
+      return res.status(200).json({
+        message: 'No pending friend requests',
+        count: 0,
+        Date: [],
+      });
+    }
+
+    // ✅ جلب بيانات المستخدمين الذين أرسلوا الطلبات
+    const users = await db.query(
+      'SELECT id_user, username, img_user, email FROM project02.users WHERE id_user = ANY($1)  ORDER BY created_at DESC',
+      [Fr]
+    );
+
+    return res.status(200).json({
+      message: 'Pending friend requests received',
+      count: Cf,
+      Date: users.rows,
+    });
+  } catch (error) {
+    console.error('Error in showReqFriend:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// export const showReqFriend = async (req, res) => {
+//   try {
+//     const id_user = parseInt(req.params.id);
+
+//     // 🟡 تحقق من صحة المعرّف
+//     if (isNaN(id_user)) {
+//       return res.status(400).json({ message: 'Invalid user ID' });
+//     }
+
+//     // 🟡 تحقق من وجود المستخدم
+//     const userExists = await db.query(
+//       'SELECT 1 FROM project02.users WHERE id_user = $1',
+//       [id_user]
+//     );
+//     if (userExists.rows.length === 0) {
+//       return res.status(404).json({ message: 'User not found' });
+//     }
+
+//     // 🟢 استعلام واحد فقط لجلب الطلبات + معلومات المرسلين
+//     const result = await db.query(
+//       `
+//       SELECT
+//         u.id_user,
+//         u.username,
+//         u.email,
+//         u.img_user
+//       FROM project02.friendships f
+//       JOIN project02.users u
+//         ON u.id_user = f.id_user
+//       WHERE f.id_friend = $1
+//         AND f.status = FALSE
+//       ORDER BY f.created_at DESC
+//       `,
+//       [id_user]
+//     );
+
+//     // 🟣 حساب العدد مباشرة
+//     const count = result.rows.length;
+
+//     // 🟢 النتيجة النهائية
+//     return res.status(200).json({
+//       message: 'Pending friend requests fetched successfully',
+//       count,
+//       data: result.rows,
+//     });
+
+//   } catch (error) {
+//     console.error('Error in showReqFriend:', error);
+//     return res.status(500).json({ error: 'Internal server error' });
+//   }
+// };
+
+export const showALLFriend = async (req, res) => {
+  try {
+    const id_user = parseInt(req.params.id);
+
+    if (isNaN(id_user)) {
+      return res.status(400).json({ message: 'Invalid user ID' });
+    }
+
+    // ✅ تحقق من وجود المستخدم
+    const friendExists = await db.query(
+      'SELECT 1 FROM project02.users WHERE id_user = $1',
+      [id_user]
+    );
+    if (friendExists.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // ✅ جلب الطلبات المرسلة إلى المستخدم (الواردة)
+    const result = await db.query(
+      `
+      SELECT 
+        array_agg(id_friend) AS pending_senders,
+        (SELECT COUNT(*) 
+         FROM project02.friendships 
+         WHERE id_user = $1 AND status = TRUE) AS pending_count
+      FROM project02.friendships 
+      WHERE id_user = $1 AND status = TRUE
+      
+      `,
+      [id_user]
+    );
+
+    const Fr = result.rows[0].pending_senders;
+    const Cf = result.rows[0].pending_count;
+
+    // ✅ لا توجد طلبات
+    if (!Fr || Fr.length === 0) {
+      return res.status(200).json({
+        message: 'No pending friends',
+        count: 0,
+        Date: [],
+      });
+    }
+
+    // ✅ جلب بيانات المستخدمين الذين أرسلوا الطلبات
+    const users = await db.query(
+      'SELECT id_user, username, img_user, email FROM project02.users WHERE id_user = ANY($1)  ORDER BY created_at DESC',
+      [Fr]
+    );
+
+    return res.status(200).json({
+      message: 'Pending friends',
+      count: Cf,
+      Date: users.rows,
+    });
+  } catch (error) {
+    console.error('Error in showReqFriend:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
