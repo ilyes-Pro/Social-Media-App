@@ -4,6 +4,7 @@ import {
   authSchema,
   shemaUsername,
   shemaPassword,
+  schemaEmail,
 } from '../schemas/auth.schema.js';
 import {
   register,
@@ -32,8 +33,8 @@ router.post(
   UploadProfile
 );
 
-router.post('/login', authLimiter, login);
-router.post('/forgotPassword', forgotPassword);
+router.post('/login', authLimiter, validate(shemaPassword), login);
+router.post('/forgotPassword', validate(schemaEmail), forgotPassword);
 router.patch(
   '/resetPassword/:resetTokenURL',
   validate(shemaPassword),

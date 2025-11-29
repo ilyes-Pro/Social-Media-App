@@ -20,21 +20,21 @@ import { v2 as cloudinary } from 'cloudinary';
 import redis from '../config/redis.js';
 
 export const register = async (req, res) => {
-  const { email, password, username } = req.body;
+  const { email, password, username, fullname } = req.body;
 
-  if (!email || !password || !username) {
-    return res
-      .status(404)
-      .json({ error: 'Email and password or username in not exist ' });
-  }
+  // if (!email || !password || !username) {
+  //   return res
+  //     .status(404)
+  //     .json({ error: 'Email and password or username in not exist ' });
+  // }
   try {
     const userExists = await db.query(
-      'SELECT * FROM project02.users WHERE email=$1',
-      [email]
+      'SELECT * FROM project02.users WHERE email=$1 OR username=$2',
+      [email, username]
     );
 
     if (userExists.rows[0]) {
-      return res.status(404).json({ error: 'Email is exist ' });
+      return res.status(404).json({ error: 'Email or user name is exist ' });
     }
 
     const verificationCode = Math.floor(
@@ -51,8 +51,8 @@ export const register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 12);
 
     const result = await db.query(
-      'INSERT INTO project02.users (username,email,password) VALUES ($1,$2,$3) RETURNING id_user,username,email',
-      [username, email, hashedPassword]
+      'INSERT INTO project02.users (username,fullname,email,password) VALUES ($1,$2,$3,$4) RETURNING id_user,username,email',
+      [username, fullname, email, hashedPassword]
     );
     res.status(200).json({ message: 'Verification code sent to email' });
   } catch (error) {
@@ -62,33 +62,6 @@ export const register = async (req, res) => {
     });
   }
 };
-
-export const UploadProfile = async (req, res) => {
-  const email = req.body.email;
-  const imge = req.file.path;
-
-  try {
-    if (!imge || !email) {
-      return res
-        .status(404)
-        .json({ error: 'please upload imge and provide email' });
-    }
-
-    const user = await db.query(
-      'UPDATE project02.users SET img_user=$1 WHERE email=$2 RETURNING *',
-      [imge, email]
-    );
-    if (!user.rows[0] || !user.rows[0].is_verified) {
-      return res.status(400).json({ error: 'User not found or not verified' });
-    }
-    res.status(200).json(user.rows[0]);
-  } catch (error) {
-    res.status(500).json({
-      error: 'Server error',
-    });
-  }
-};
-
 export const verify = async (req, res) => {
   const { email, code } = req.body;
 
@@ -130,6 +103,30 @@ export const verify = async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json(error);
+  }
+};
+
+export const UploadProfile = async (req, res) => {
+  const email = req.user.email;
+  const imge = req.file.path;
+
+  try {
+    if (!imge) {
+      return res.status(404).json({ error: 'please upload imge ' });
+    }
+
+    const user = await db.query(
+      'UPDATE project02.users SET img_user=$1 WHERE email=$2 RETURNING *',
+      [imge, email]
+    );
+    if (!user.rows[0] || !user.rows[0].is_verified) {
+      return res.status(400).json({ error: 'User not found or not verified' });
+    }
+    res.status(200).json(user.rows[0]);
+  } catch (error) {
+    res.status(500).json({
+      error: 'Server error',
+    });
   }
 };
 
@@ -175,18 +172,20 @@ export const token = (req, res) => {
   const token = req.cookies.refreshToken;
   if (!token) return res.status(401).json({ error: 'No refresh token' });
 
-  jwt.verify(token, REFRESH_TOKEN_SECRET, (err, user) => {
+  jwt.verify(token, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
     if (err) return res.status(403).json({ error: 'Invalid refresh token' });
 
     const newAccessToken = generateAccessToken({
       id: user.id_user,
       email: user.email,
       username: user.username,
+      fullname: user.fullname,
     });
     const newRefreshToken = generateRefreshToken({
       id: user.id_user,
       email: user.email,
       username: user.username,
+      fullname: user.fullname,
     });
     setRefreshCookie(res, newRefreshToken);
 
@@ -255,11 +254,11 @@ export const resetPassword = async (req, res) => {
 };
 
 export const UdateProfile = async (req, res) => {
-  const username = req.body.username?.trim();
+  const fullname = req.body.fullname?.trim();
   const imge = req.file?.path;
   const id = parseInt(req.params.id);
 
-  if (!username && !imge) {
+  if (!fullname && !imge) {
     return res.status(404).json({ error: 'enter usernaem or imge to update' });
   }
 
@@ -274,8 +273,8 @@ export const UdateProfile = async (req, res) => {
     }
     const oldImg = olduser.rows[0].img_user;
     let result = await db.query(
-      'UPDATE project02.users SET username=COALESCE($1, username) ,img_user=COALESCE($2, img_user) WHERE id_user=$3  RETURNING  id_user,username,img_user',
-      [username, imge, id]
+      'UPDATE project02.users SET fullname=COALESCE($1, fullname) ,img_user=COALESCE($2, img_user) WHERE id_user=$3  RETURNING  id_user,fullname,img_user',
+      [fullname, imge, id]
     );
 
     if (imge && oldImg) {

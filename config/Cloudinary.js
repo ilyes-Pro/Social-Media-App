@@ -2,8 +2,6 @@ import multer from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
 import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import fileFilter from '../middleware/filterImg.js';
-import dotenv from 'dotenv';
-dotenv.config();
 
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,

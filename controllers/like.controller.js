@@ -27,12 +27,10 @@ export const likePost = async (req, res) => {
         [id_post, user.id_user]
       );
 
-      return res
-        .status(200)
-        .json({
-          message: 'Post unliked successfully',
-          deslike: postExists.rows[0],
-        });
+      return res.status(200).json({
+        message: 'Post unliked successfully',
+        deslike: postExists.rows[0],
+      });
     }
 
     //add like
@@ -70,7 +68,7 @@ export const showUsersLikesPost = async (req, res) => {
     }
 
     const userLikes = await db.query(
-      `SELECT u.id_user, u.username, u.email, u.img_user
+      `SELECT u.id_user, u.username,u.fullname, u.email, u.img_user
        FROM project02.likes l
        JOIN project02.users u ON l.id_user = u.id_user
        WHERE l.id_post = $1

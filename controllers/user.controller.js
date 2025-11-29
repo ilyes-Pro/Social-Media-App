@@ -11,7 +11,7 @@ export const users = async (req, res) => {
     const total_users = parseInt(total_usersResult.rows[0].total_users);
 
     const result = await db.query(
-      'SELECT id_user,username,email,img_user FROM project02.users WHERE is_verified = true LIMIT $1 OFFSET $2',
+      'SELECT id_user,username,fullname,email,img_user FROM project02.users WHERE is_verified = true LIMIT $1 OFFSET $2',
       [limite, (page - 1) * limite]
     );
 
@@ -41,7 +41,7 @@ export const showUser = async (req, res) => {
 
   try {
     const userResult = await db.query(
-      `SELECT id_user, username, email, img_user
+      `SELECT id_user, username,fullname, email, img_user
        FROM project02.users
        WHERE id_user = $1 AND is_verified = true`,
       [id]
@@ -91,7 +91,7 @@ export const searchUser = async (req, res) => {
 
   try {
     const result = await db.query(
-      `SELECT id_user, username, email, img_user
+      `SELECT id_user, username, fullname,email, img_user
        FROM project02.users
        WHERE username LIKE $1 AND is_verified = true`,
       [`${search}%`]

@@ -264,7 +264,7 @@ export const getPostByTagId = async (req, res) => {
         p.body_post,
         p.img_post,
         p.created_at AS post_created_at,
-        u.id_user, u.username, u.email, u.img_user, u.is_verified,
+        u.id_user, u.username,u.fullname, u.email, u.img_user, u.is_verified,
         t.body_tag,
         (SELECT COUNT(*) FROM project02.comments c WHERE c.id_post = p.id_post) AS comment_count,
         (SELECT COUNT(*) FROM project02.likes l WHERE l.id_post = p.id_post) AS like_count
@@ -286,6 +286,7 @@ export const getPostByTagId = async (req, res) => {
       author: {
         id_user: a.id_user,
         username: a.username,
+        fullname:a.fullname,
         img_user: a.img_user,
         email: a.email,
         is_verified: a.is_verified,

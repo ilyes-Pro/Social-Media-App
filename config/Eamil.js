@@ -1,27 +1,16 @@
-// config/email.js
 import SibApiV3Sdk from 'sib-api-v3-sdk';
 
-// ✅ إعداد مفتاح Brevo API
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
-console.log('🔑 BREVO_API_KEY loaded:', BREVO_API_KEY);
-if (!BREVO_API_KEY) {
-  throw new Error('❌ Missing BREVO_API_KEY in .env file');
-}
 
-// ✅ تهيئة العميل
 const defaultClient = SibApiV3Sdk.ApiClient.instance;
 defaultClient.authentications['api-key'].apiKey = BREVO_API_KEY;
 const tranEmailApi = new SibApiV3Sdk.TransactionalEmailsApi();
 
-// ✅ المرسل الافتراضي
 const SENDER = {
-  email: 'ilyesprogrammer46@gmail.com',
-  name: 'ilyes',
+  email: process.env.EMAIL,
+  name: process.env.NAME,
 };
 
-/**
- * ✉️ إرسال بريد عام عبر Brevo
- */
 export const sendEmail = async ({ to, subject, text, html }) => {
   try {
     const sendSmtpEmail = {
@@ -40,9 +29,6 @@ export const sendEmail = async ({ to, subject, text, html }) => {
   }
 };
 
-/**
- * 🔐 إنشاء وإرسال كود التحقق عبر Brevo
- */
 export const sendVerificationEmail = async (email, code) => {
   const subject = 'Verify your email address';
   const html = `

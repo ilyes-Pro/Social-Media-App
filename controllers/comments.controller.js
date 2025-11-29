@@ -30,7 +30,7 @@ export const getCommentsByPostId = async (req, res) => {
     const result = await db.query(
       `SELECT 
          c.id_comment, c.body_comment, c.created_at,
-         u.id_user, u.username, u.email, u.img_user, u.is_verified
+         u.id_user, u.username,u.fullname, u.email, u.img_user, u.is_verified
        FROM project02.comments c
        JOIN project02.users u ON c.id_user = u.id_user
        WHERE c.id_post = $1
@@ -46,6 +46,7 @@ export const getCommentsByPostId = async (req, res) => {
       author: {
         id_user: a.id_user,
         username: a.username,
+        fullname: a.fullname,
         img_user: a.img_user,
         email: a.email,
         is_verified: a.is_verified,
@@ -101,7 +102,7 @@ export const addComment = async (req, res) => {
       author: {
         id_user: user.id_user,
         username: user.username,
-
+        fullname: a.fullname,
         email: user.email,
       },
     };

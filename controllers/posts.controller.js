@@ -134,6 +134,7 @@ export const getAllPosts = async (req, res) => {
         p.created_at AS post_created_at,
         u.id_user, 
         u.username, 
+        u.fullname,
         u.img_user, 
         u.email, 
         u.is_verified
@@ -203,6 +204,7 @@ export const getAllPosts = async (req, res) => {
       author: {
         id_user: a.id_user,
         username: a.username,
+        fullname:a.fullname,
         img_user: a.img_user,
         email: a.email,
         is_verified: a.is_verified,
@@ -244,6 +246,7 @@ export const getPostById = async (req, res) => {
         p.created_at AS post_created_at,
         u.id_user, 
         u.username, 
+        u.fullname,
         u.img_user, 
         u.email, 
         u.is_verified
@@ -302,6 +305,7 @@ export const getPostById = async (req, res) => {
       author: {
         id_user: post.id_user,
         username: post.username,
+        fullname: post.fullname,
         img_user: post.img_user,
         email: post.email,
         is_verified: post.is_verified,
