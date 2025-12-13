@@ -16,6 +16,7 @@ import {
   forgotPassword,
   resetPassword,
   UploadProfile,
+  DeleteUser_Profile_Imge,
 } from '../controllers/auth.controller.js';
 import authLimiter from '../config/rateLimit.js';
 import { Upload } from '../config/Cloudinary.js';
@@ -27,9 +28,13 @@ const router = express.Router();
 router.post('/register', authLimiter, validate(authSchema), register);
 router.post('/verify', authLimiter, verify);
 router.post(
-  '/UploadProfileImage',
+  '/UploadProfile',
   passport.authenticate('jwt', { session: false }),
-  Upload.single('image'),
+  // Upload.single('image'),
+  Upload.fields([
+    { name: 'img_user', maxCount: 1 },
+    { name: 'p_img', maxCount: 1 },
+  ]),
   UploadProfile
 );
 
@@ -45,10 +50,21 @@ router.post('/logout', logout);
 router.post('/token', token);
 
 router.patch(
-  '/UpdateProfile/:id',
+  '/UdateProfile',
   passport.authenticate('jwt', { session: false }),
   validate(shemaUsername),
-  Upload.single('image'),
+  Upload.fields([
+    { name: 'img_user', maxCount: 1 },
+    { name: 'p_img', maxCount: 1 },
+  ]),
   UdateProfile
 );
+
+router.delete(
+  '/DeleteImge_user_profile/:type',
+  passport.authenticate('jwt', { session: false }),
+
+  DeleteUser_Profile_Imge
+);
+
 export default router;

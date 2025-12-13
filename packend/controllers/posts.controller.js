@@ -1,16 +1,19 @@
 import e from 'express';
 import db from '../config/db.js';
-import dayjs from 'dayjs';
-import relativeTime from 'dayjs/plugin/relativeTime.js';
-import 'dayjs/locale/en.js';
+
 import { v2 as cloudinary } from 'cloudinary';
 import { GetPublicId } from '../config/Cloudinary.js';
 
+import dayjs from 'dayjs';
+import 'dayjs/locale/en.js';
+import relativeTime from 'dayjs/plugin/relativeTime.js';
 dayjs.extend(relativeTime);
 dayjs.locale('en');
+
 export const createPost = async (req, res) => {
   try {
-    const user = req.user;
+    const user = req.user.id_user;
+    console.log('this is user ', user);
     const { body_post } = req.body;
     const image = req.file?.path;
 
@@ -24,7 +27,7 @@ export const createPost = async (req, res) => {
       `INSERT INTO project02.posts (id_user, img_post, body_post)
        VALUES ($1, $2, $3)
        RETURNING *`,
-      [user.id_user, image, body_post]
+      [user, image, body_post]
     );
 
     return res.status(201).json({
@@ -36,17 +39,13 @@ export const createPost = async (req, res) => {
     return res.status(500).json({ error: 'Server error' });
   }
 };
-
+// Another version of getAllPosts
 // export const getAllPosts = async (req, res) => {
-//   const limit = req.query.limit || 10;
-//   const page = req.query.page || 1;
+//   const limit = Math.max(parseInt(req.query.limit) || 10, 1);
+//   const page = Math.max(parseInt(req.query.page) || 1, 1);
+//   const offset = (page - 1) * limit;
+
 //   try {
-
-//      const total_Post = await db.query(
-//       'SELECT COUNT(*) AS total_posts FROM project02.posts'
-//     );
-
-//     const total_posts = parseInt(total_Post.rows[0].total_posts);
 //     const result = await db.query(
 //       `
 //       SELECT
@@ -54,66 +53,70 @@ export const createPost = async (req, res) => {
 //         p.img_post,
 //         p.body_post,
 //         p.created_at AS post_created_at,
-//         u.id_user,
-//         u.username,
-//         u.img_user,
-//         u.email,
-//         u.is_verified
+
+//         json_build_object(
+//           'id_user', u.id_user,
+//           'username', u.username,
+//           'fullname', u.fullname,
+//           'img_user', u.img_user,
+//           'email', u.email,
+//           'is_verified', u.is_verified
+//         ) AS author,
+
+//         COUNT(DISTINCT c.id_comment) AS comments_count,
+//         COUNT(DISTINCT l.id_like) AS likes,
+
+//         COALESCE(
+//           json_agg(DISTINCT t.body_tag) FILTER (WHERE t.body_tag IS NOT NULL),
+//           '[]'
+//         ) AS tags,
+
+//         COUNT(*) OVER() AS total_posts
+
 //       FROM project02.posts p
 //       INNER JOIN project02.users u ON p.id_user = u.id_user
-//       ORDER BY p.created_at DESC LIMIT $1 OFFSET $2
-//     `,
-//       [limit, (page - 1) * limit]
+//       LEFT JOIN project02.comments c ON c.id_post = p.id_post
+//       LEFT JOIN project02.likes l ON l.id_post = p.id_post
+//       LEFT JOIN project02.post_tags pt ON pt.id_post = p.id_post
+//       LEFT JOIN project02.tags t ON pt.id_tag = t.id_tag
+
+//       GROUP BY p.id_post, u.id_user
+//       ORDER BY p.created_at DESC
+//       LIMIT $1 OFFSET $2
+//       `,
+//       [limit, offset]
 //     );
 
-//     const Rcomments = await db.query(
-//       `
-//   SELECT id_post, COUNT(*) AS comment_count
-//   FROM project02.comments
-//   GROUP BY id_post LIMIT $1 OFFSET $2
-// `,
-//       [limit, (page - 1) * limit]);
+//     const total_posts = result.rows[0]?.total_posts || 0;
 
-//     const Rtags = await db.query(`
-//   SELECT id_post,json_agg (body_tag) As tags
-//   FROM project02.post_tags
-//   INNER JOIN project02.tags  ON project02.post_tags.id_tag= project02.tags.id_tag
-//   GROUP BY id_post LIMIT $1 OFFSET $2
-// `, [limit, (page - 1) * limit]
-// );
-//     const postMap = result.rows.map((a) => ({
-//       id_psot: a.id_post,
-//       body_post: a.body_post,
-//       img_post: a.img_post,
-//       created_at: dayjs(a.post_created_at).fromNow(),
-//       author: {
-//         id_user: a.id_user,
-//         username: a.username,
-//         img_user: a.img_user,
-//         email: a.email,
-//         is_verified: a.is_verified,
-//       },
-
-//       comments_count:
-//         Rcomments.rows.find((c) => c.id_post === a.id_post)?.comment_count || 0,
-//       tags: Rtags.rows.find((c) => c.id_post === a.id_post)?.tags || [],
-//       meta:{
-
-//           current_page: page,
-//         last_page: Math.ceil(total_posts / limit),
-//         per_page: limit,
-//         total_posts: total_posts,
-//         from: (page - 1) * limit + 1,
-//         to: (page - 1) * limit + result.rows.length,
-//       }
+//     const posts = result.rows.map((p) => ({
+//       id_post: p.id_post,
+//       body_post: p.body_post,
+//       img_post: p.img_post,
+//       created_at: dayjs(p.post_created_at).fromNow(),
+//       author: p.author,
+//       comments_count: p.comments_count,
+//       like: p.likes,
+//       tags: p.tags,
 //     }));
 
-//     res.status(200).json({ data: postMap });
+//     res.status(200).json({
+//       meta: {
+//         current_page: page,
+//         last_page: Math.ceil(total_posts / limit),
+//         per_page: limit,
+//         total_posts,
+//         from: offset + 1,
+//         to: offset + posts.length,
+//       },
+//       data: posts,
+//     });
 //   } catch (err) {
 //     console.error('Error fetching posts:', err);
 //     res.status(500).json({ error: 'Server error' });
 //   }
 // };
+
 export const getAllPosts = async (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
   const page = parseInt(req.query.page) || 1;
@@ -204,7 +207,7 @@ export const getAllPosts = async (req, res) => {
       author: {
         id_user: a.id_user,
         username: a.username,
-        fullname:a.fullname,
+        fullname: a.fullname,
         img_user: a.img_user,
         email: a.email,
         is_verified: a.is_verified,
@@ -263,7 +266,6 @@ export const getPostById = async (req, res) => {
     }
     const post = result.rows[0];
 
-    // 💬 4. جلب عدد التعليقات لكل منشور فقط في الصفحة الحالية
     const Rcomments = await db.query(
       `
       SELECT id_post, COUNT(*) AS comment_count
@@ -296,7 +298,6 @@ export const getPostById = async (req, res) => {
       [id]
     );
 
-    // 🧩 6. دمج النتائج في كائن موحّد
     const postMap = {
       id_post: post.id_post,
       body_post: post.body_post,
@@ -389,7 +390,6 @@ export const updatePost = async (req, res) => {
 export const deletePost = async (req, res) => {
   try {
     const id_post = parseInt(req.params.id_post);
-    const user = req.user;
 
     const postOwner = await db.query(
       'SELECT id_user, img_post FROM project02.posts WHERE id_post = $1',
@@ -398,12 +398,6 @@ export const deletePost = async (req, res) => {
 
     if (!postOwner.rows.length) {
       return res.status(404).json({ message: 'post not found' });
-    }
-
-    if (postOwner.rows[0].id_user !== user.id_user) {
-      return res
-        .status(403)
-        .json({ message: 'not authorized to delete this post' });
     }
 
     const reset = await db.query(
@@ -422,3 +416,42 @@ export const deletePost = async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 };
+
+// Another version of deletePost
+
+// export const deletePost = async (req, res) => {
+//   try {
+//     const id_post = parseInt(req.params.id_post);
+
+//     const post = await db.query(
+//       'SELECT id_user, img_post FROM project02.posts WHERE id_post = $1',
+//       [id_post]
+//     );
+
+//     if (!post.rows.length) {
+//       return res.status(404).json({ message: 'Post not found' });
+//     }
+
+//     const deleted = await db.query(
+//       'DELETE FROM project02.posts WHERE id_post = $1 RETURNING *',
+//       [id_post]
+//     );
+
+//     if (post.rows[0].img_post) {
+//       try {
+//         const publicId = GetPublicId(post.rows[0].img_post);
+//         await cloudinary.uploader.destroy(publicId);
+//       } catch (err) {
+//         console.warn('Cloudinary deletion failed', err);
+//       }
+//     }
+
+//     res.status(200).json({
+//       message: 'Post deleted successfully',
+//       data: deleted.rows[0],
+//     });
+//   } catch (err) {
+//     console.error('Delete post error:', err);
+//     res.status(500).json({ error: 'Server error' });
+//   }
+// };

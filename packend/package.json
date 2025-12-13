@@ -36,5 +36,8 @@
     "redis": "^5.8.3",
     "relative-time-format": "^1.1.11",
     "sib-api-v3-sdk": "^8.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.1"
   }
 }

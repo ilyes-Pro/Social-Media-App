@@ -107,23 +107,42 @@ export const verify = async (req, res) => {
 };
 
 export const UploadProfile = async (req, res) => {
+  // const email = req.user.email;
+  // const bio = req.body.bio || '';
+  // const imge = req.file?.path || null;
+  // const imge_p = req.file?.path || null;
+
   const email = req.user.email;
-  const imge = req.file.path;
+  const bio = req.body.bio?.trim();
 
+  const img_user = req.files?.img_user?.[0]?.path || null;
+  const p_img = req.files?.p_img?.[0]?.path || null;
   try {
-    if (!imge) {
-      return res.status(404).json({ error: 'please upload imge ' });
-    }
-
+    const Verify = await db.query(
+      'SELECT img_user,p_img FROM  project02.users WHERE email=$1',
+      [email]
+    );
     const user = await db.query(
-      'UPDATE project02.users SET img_user=$1 WHERE email=$2 RETURNING *',
-      [imge, email]
+      'UPDATE project02.users SET img_user=COALESCE($1,img_user),p_img=COALESCE($2,p_img),bio=COALESCE($3,bio) WHERE email=$4 RETURNING *',
+      [img_user, p_img, bio, email]
     );
     if (!user.rows[0] || !user.rows[0].is_verified) {
       return res.status(400).json({ error: 'User not found or not verified' });
     }
-    res.status(200).json(user.rows[0]);
+
+    if (user.rows[0].img_user && Verify.rows[0].img_user) {
+      const publicId = GetPublicId(Verify.rows[0].img_user);
+      cloudinary.uploader.destroy(publicId);
+    }
+    if (user.rows[0].p_img && Verify.rows[0].p_img) {
+      const publicId = GetPublicId(Verify.rows[0].p_img);
+      cloudinary.uploader.destroy(publicId);
+    }
+
+    const { password, ...userWithoutPassword } = user.rows[0];
+    res.status(200).json(userWithoutPassword);
   } catch (error) {
+    console.log(error);
     res.status(500).json({
       error: 'Server error',
     });
@@ -153,8 +172,8 @@ export const login = async (req, res) => {
     const payload = {
       id: user.id_user,
       email: user.email,
-      username: user.username,
     };
+    console.log('this is login : ', payload);
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
     setRefreshCookie(res, refreshToken);
@@ -171,23 +190,18 @@ export const login = async (req, res) => {
 export const token = (req, res) => {
   const token = req.cookies.refreshToken;
   if (!token) return res.status(401).json({ error: 'No refresh token' });
-
+  console.log('this is the refersh token : ', process.env.REFRESH_TOKEN_SECRET);
   jwt.verify(token, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
     if (err) return res.status(403).json({ error: 'Invalid refresh token' });
 
-    const newAccessToken = generateAccessToken({
-      id: user.id_user,
+    const payload = {
+      id: user.id,
       email: user.email,
-      username: user.username,
-      fullname: user.fullname,
-    });
-    const newRefreshToken = generateRefreshToken({
-      id: user.id_user,
-      email: user.email,
-      username: user.username,
-      fullname: user.fullname,
-    });
-    setRefreshCookie(res, newRefreshToken);
+    };
+
+    const newAccessToken = generateAccessToken(payload);
+    const refreshToken = generateRefreshToken(payload);
+    setRefreshCookie(res, refreshToken);
 
     res.json({ accessToken: newAccessToken });
   });
@@ -255,34 +269,79 @@ export const resetPassword = async (req, res) => {
 
 export const UdateProfile = async (req, res) => {
   const fullname = req.body.fullname?.trim();
-  const imge = req.file?.path;
-  const id = parseInt(req.params.id);
+  const bio = req.body.bio?.trim();
+  const img_user = req.files?.img_user?.[0]?.path || null;
+  const p_img = req.files?.p_img?.[0]?.path || null;
 
-  if (!fullname && !imge) {
-    return res.status(404).json({ error: 'enter usernaem or imge to update' });
-  }
+  // const id = parseInt(req.params.id);
+  const id = req.user.id_user;
+
+  // if (!fullname && !imge) {
+  //   return res.status(404).json({ error: 'enter usernaem or imge to update' });
+  // }
 
   try {
     let olduser = await db.query(
-      'SELECT img_user FROM project02.users WHERE id_user=$1',
+      'SELECT img_user,p_img FROM project02.users WHERE id_user=$1',
       [id]
     );
 
     if (!olduser.rows[0]) {
       return res.status(404).json({ error: 'user is not exist ' });
     }
-    const oldImg = olduser.rows[0].img_user;
-    let result = await db.query(
-      'UPDATE project02.users SET fullname=COALESCE($1, fullname) ,img_user=COALESCE($2, img_user) WHERE id_user=$3  RETURNING  id_user,fullname,img_user',
-      [fullname, imge, id]
+
+    const user = await db.query(
+      'UPDATE project02.users SET img_user=COALESCE($1,img_user),p_img=COALESCE($2,p_img),bio=COALESCE($3,bio),fullname=COALESCE($4,fullname) WHERE id_user=$5 RETURNING *',
+      [img_user, p_img, bio, fullname, id]
     );
 
-    if (imge && oldImg) {
-      const publicId = GetPublicId(oldImg);
+    if (user.rows[0].img_user && olduser.rows[0].img_user) {
+      const publicId = GetPublicId(olduser.rows[0].img_user);
+      await cloudinary.uploader.destroy(publicId);
+    }
+    if (user.rows[0].p_img && olduser.rows[0].p_img) {
+      const publicId = GetPublicId(olduser.rows[0].p_img);
       await cloudinary.uploader.destroy(publicId);
     }
 
-    res.status(200).json(result.rows);
+    const { password, ...userWithoutPassword } = user.rows[0];
+    res.status(200).json(userWithoutPassword);
+  } catch (error) {
+    process.env.NODE_ENV === 'development' &&
+      console.log('❌ Error in login:', error);
+    res.status(500).json({
+      error: 'Server error',
+    });
+  }
+};
+
+export const DeleteUser_Profile_Imge = async (req, res) => {
+  try {
+    const id = req.user.id_user;
+    const { type } = req.params;
+    const Imgs = ['p_img', 'img_user'];
+
+    if (!Imgs.includes(type)) {
+      return res.status(404).json({ message: 'query is not exist' });
+    }
+    let user = await db.query(
+      `SELECT ${type} FROM project02.users WHERE id_user=$1`,
+      [id]
+    );
+
+    if (!user.rows[0][type]) {
+      return res.status(404).json({ message: 'imge is not exist' });
+    }
+    const publicId = GetPublicId(user.rows[0][type]);
+    await cloudinary.uploader.destroy(publicId);
+
+    const Delete = await db.query(
+      ` UPDATE project02.users SET ${type} = NULL WHERE id_user = $1 RETURNING * `,
+      [id]
+    );
+
+    const { password, ...userWithoutPassword } = Delete.rows[0];
+    res.status(200).json(userWithoutPassword);
   } catch (error) {
     process.env.NODE_ENV === 'development' &&
       console.log('❌ Error in login:', error);

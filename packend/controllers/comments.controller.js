@@ -95,16 +95,15 @@ export const addComment = async (req, res) => {
       [body_comment, id_post, user.id_user]
     );
 
+    const author = await db.query(
+      'SELECT id_user ,username,fullname,email,img_user FROM project02.users WHERE id_user = $1',
+      [user.id_user]
+    );
     const newComment = {
       id_comment: reset.rows[0].id_comment,
       body_comment: reset.rows[0].body_comment,
       created_at: dayjs(reset.rows[0].created_at).fromNow(),
-      author: {
-        id_user: user.id_user,
-        username: user.username,
-        fullname: a.fullname,
-        email: user.email,
-      },
+      author: author.rows[0],
     };
     return res.status(201).json({
       message: 'Comment added successfully',
