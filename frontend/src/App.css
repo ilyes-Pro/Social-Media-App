@@ -1,5 +1,5 @@
 @import 'tailwindcss';
-@import "tw-animate-css";
+@import 'tw-animate-css';
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* @font-face {
@@ -36,6 +36,7 @@
 :root {
   --color-bg: #e7eefa;
   --color-text: black;
+
   --radius: 0.625rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -73,6 +74,7 @@
 .dark {
   --color-bg: #1d232e;
   --color-text: white;
+
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);

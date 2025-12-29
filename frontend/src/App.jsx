@@ -1,12 +1,30 @@
 import './App.css';
-
-import { Button } from '@/components/ui/button';
-
+import LoginSignUpForPassw_Bage from './components/loginSignUpForPassw_Bage';
+import ProtectedRoute from './components/chemas/ProtectedRoute';
+import { Routes, Route } from 'react-router-dom';
+import MainPage from './components/mainPage';
+import { Navigate } from 'react-router-dom';
 function App() {
+  const isLoggedIn = false;
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center">
-      <Button>Click me</Button>
-    </div>
+    <>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            isLoggedIn ? (
+              <Navigate to="/MainPage" replace />
+            ) : (
+              <LoginSignUpForPassw_Bage />
+            )
+          }
+        />
+
+        <Route element={<ProtectedRoute isAllowed={isLoggedIn} />}>
+          <Route path="/MainPage" element={<MainPage />} />
+        </Route>
+      </Routes>
+    </>
   );
 }
 
