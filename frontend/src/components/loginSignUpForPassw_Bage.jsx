@@ -1,7 +1,11 @@
+//API
+import useAuthStore from '../Store/AuthStore';
+
 // LoginBage.jsx
-
 import VerifyEmail from './VerifyEmail';
-
+import { Toaster } from './ui/sonner';
+import { toast } from 'sonner';
+import { Spinner } from './ui/spinner';
 import cover from '../assets/soft_abstract_gradient_background_for_modern_ui.png';
 import {
   Lock,
@@ -36,6 +40,8 @@ import {
 } from './chemas/loginSchema';
 
 export default function LoginSignUpForPassw_Bage() {
+  const { login, loading, statusUser } = useAuthStore();
+
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [mod, setMode] = useState('login'); // 'login' or 'signup'
@@ -65,12 +71,22 @@ export default function LoginSignUpForPassw_Bage() {
       : signForm
     : ForgotPasswordForm;
 
-  const onSubmit = (data) => {
+  const onSubmit = async (data) => {
     console.log(`${mod} data:`, data);
+
     if (mod === 'login') {
-      // بعد نجاح تسجيل الدخول
-      navigate('/MainPage', { replace: true });
+      const result = await login(data);
+      if (!result.success) {
+        toast.error(result.message);
+      }
+
+      if (result.success) {
+        toast.success('Event has been created');
+
+        navigate('/MainPage', { replace: true });
+      }
     }
+
     if (mod === 'signup') {
       setOpen((prev) => ({ ...prev, openVerifyEmail: true }));
     }
@@ -254,11 +270,19 @@ export default function LoginSignUpForPassw_Bage() {
               {!open.openVerifyEmail && (
                 <CardFooter className="!mt-5">
                   <Button type="submit" className="w-full">
-                    {!open.openFP
-                      ? mod === 'login'
-                        ? 'Login'
-                        : 'Sign Up'
-                      : 'Send Reset Link'}
+                    {!loading ? (
+                      !open.openFP ? (
+                        mod === 'login' ? (
+                          'Login'
+                        ) : (
+                          'Sign Up'
+                        )
+                      ) : (
+                        'Send Reset Link'
+                      )
+                    ) : (
+                      <Spinner className="size-6 text-bg" />
+                    )}
                   </Button>
                 </CardFooter>
               )}

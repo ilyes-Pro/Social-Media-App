@@ -4,15 +4,22 @@ import ProtectedRoute from './components/chemas/ProtectedRoute';
 import { Routes, Route } from 'react-router-dom';
 import MainPage from './components/mainPage';
 import { Navigate } from 'react-router-dom';
+import { Toaster } from './components/ui/sonner';
+
+//API
+import useAuthStore from './Store/AuthStore';
+
 function App() {
-  const isLoggedIn = false;
+  const { statusUser } = useAuthStore();
+  console.log('Auth Status:', statusUser.statusUS);
   return (
     <>
+      <Toaster richColors position="bottom-right" />
       <Routes>
         <Route
           path="/"
           element={
-            isLoggedIn ? (
+            statusUser.statusUS ? (
               <Navigate to="/MainPage" replace />
             ) : (
               <LoginSignUpForPassw_Bage />
@@ -20,7 +27,7 @@ function App() {
           }
         />
 
-        <Route element={<ProtectedRoute isAllowed={isLoggedIn} />}>
+        <Route element={<ProtectedRoute isAllowed={statusUser.statusUS} />}>
           <Route path="/MainPage" element={<MainPage />} />
         </Route>
       </Routes>

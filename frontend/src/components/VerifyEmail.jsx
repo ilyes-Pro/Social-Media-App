@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from './ui/card';
 
+// import { Toaster, toast } from 'sonner';
 export default function VerifyEmail() {
   const [otp, setOtp] = useState('');
   const [time, setTime] = useState(0.2 * 60);
@@ -20,6 +21,7 @@ export default function VerifyEmail() {
   const handlechange_Sign_log = () => {
     setTime(0.2 * 60);
     setOtp('');
+    // toast('My first toast');
   };
 
   useEffect(() => {
@@ -43,6 +45,7 @@ export default function VerifyEmail() {
       <p className="text-center !mb-3 !font-main font-normal text-secand">
         {Math.floor(time / 60)} : {time % 60}
       </p>
+
       <OtpInput
         value={otp}
         onChange={setOtp}
