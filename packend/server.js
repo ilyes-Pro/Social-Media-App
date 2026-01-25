@@ -2,7 +2,7 @@ import express from 'express';
 
 import helmet from 'helmet';
 import authRouter from './routes/auth.route.js';
-import Cors from './config/Cors.js';
+import Cors from './config/cors.js';
 import httpsRedirect from './middleware/httpsRedirect.js';
 import fileFilter from './middleware/filterImg.js';
 import cookieParser from 'cookie-parser';
@@ -20,9 +20,9 @@ dotenv.config();
 const app = express();
 
 app.use(helmet());
-
+console.log('this is the mode :', process.env.NODE_ENV);
+app.use(Cors);
 if (process.env.NODE_ENV === 'production') {
-  app.use(Cors());
   app.use(httpsRedirect);
 }
 

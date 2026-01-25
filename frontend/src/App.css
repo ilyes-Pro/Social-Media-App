@@ -31,6 +31,14 @@
   --color-secand: #6b7290;
   --breakpoint-xs: 30rem;
   --color-puttom: #991eff;
+  --color-bg: #e7eefa;
+  --color-text: black;
+  --main-gradientBg: linear-gradient(
+    to bottom right,
+    #6d28d9,
+    #991eff,
+    #c084fc
+  );
 }
 
 :root {

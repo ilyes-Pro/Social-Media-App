@@ -17,6 +17,7 @@ import {
   resetPassword,
   UploadProfile,
   DeleteUser_Profile_Imge,
+  resendVerificationCode,
 } from '../controllers/auth.controller.js';
 import authLimiter from '../config/rateLimit.js';
 import { Upload } from '../config/Cloudinary.js';
@@ -26,6 +27,7 @@ import '../config/passport.js';
 const router = express.Router();
 
 router.post('/register', authLimiter, validate(authSchema), register);
+router.post('/resendVerificationCode', authLimiter, resendVerificationCode);
 router.post('/verify', authLimiter, verify);
 router.post(
   '/UploadProfile',

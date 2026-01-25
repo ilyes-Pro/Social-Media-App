@@ -11,6 +11,7 @@ import useAuthStore from './Store/AuthStore';
 
 function App() {
   const { statusUser } = useAuthStore();
+
   console.log('Auth Status:', statusUser.statusUS);
   return (
     <>

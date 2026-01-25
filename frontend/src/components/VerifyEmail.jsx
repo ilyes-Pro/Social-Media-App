@@ -10,18 +10,36 @@ import {
   CardHeader,
   CardTitle,
 } from './ui/card';
-
+import { Spinner } from './ui/spinner';
+import { Send } from 'lucide-react';
+import { toast } from 'sonner';
 // import { Toaster, toast } from 'sonner';
+
+//API
+import useAuthStore from '../Store/AuthStore';
+
 export default function VerifyEmail() {
+  const { verifyEmail, loading, signup } = useAuthStore();
+
   const [otp, setOtp] = useState('');
   const [time, setTime] = useState(0.2 * 60);
-  const navigate = useNavigate();
+
   const isvalide = otp.length == 6;
 
-  const handlechange_Sign_log = () => {
+  // const SendOtp = async () => {
+  //   const result = await verifyEmail({ code: otp, email: Email });
+
+  //   toast[result.success ? 'success' : 'error'](
+  //     result.success ? 'the code is valid' : result.message
+  //   );
+  //   if (result.success) {
+  //     setOpen((prev) => ({ ...prev, openProfileImge: true }));
+  //   }
+  // };
+
+  const handlechange_Sign_log = async () => {
     setTime(0.2 * 60);
     setOtp('');
-    // toast('My first toast');
   };
 
   useEffect(() => {
@@ -68,16 +86,19 @@ export default function VerifyEmail() {
           type="submit"
           className="w-full"
           disabled={!isvalide}
-          onClick={() => navigate('/MainPage', { replace: true })}
+          value={otp}
         >
-          Sign Up
+          {' '}
+          {!loading ? ' Sign Up' : <Spinner className="size-6 text-bg" />}
         </Button>
       </CardFooter>
+
       <CardDescription>
         <Button
           variant="link"
           className="text-puttom cursor-pointer !mt-5"
           onClick={handlechange_Sign_log}
+          value="SentAgin"
         >
           sent agin
         </Button>

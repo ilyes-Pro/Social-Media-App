@@ -19,6 +19,8 @@ import { v2 as cloudinary } from 'cloudinary';
 
 import redis from '../config/redis.js';
 
+let isDevelopment = process.env.NODE_ENV === 'development';
+
 export const register = async (req, res) => {
   const { email, password, username, fullname } = req.body;
 
@@ -47,19 +49,56 @@ export const register = async (req, res) => {
       15 * 60
     );
 
-    await sendVerificationEmail(email, verificationCode);
+    isDevelopment
+      ? await sendVerificationEmail(email, verificationCode)
+      : console.log(`🔄 Verification code for ${email}: ${verificationCode}`);
+
     const hashedPassword = await bcrypt.hash(password, 12);
 
     const result = await db.query(
       'INSERT INTO project02.users (username,fullname,email,password) VALUES ($1,$2,$3,$4) RETURNING id_user,username,email',
       [username, fullname, email, hashedPassword]
     );
-    res.status(200).json({ message: 'Verification code sent to email' });
+    res.status(200).json({ message: 'Verification code sent to email', email });
   } catch (error) {
     console.log('❌ Error in register:', error);
     res.status(500).json({
       error: 'Server error',
     });
+  }
+};
+
+export const resendVerificationCode = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const userExists = await db.query(
+      'SELECT * FROM project02.users WHERE email=$1 ',
+      [email]
+    );
+    if (!userExists.rows[0]) {
+      return res.status(404).json({ error: 'Email is NOT exist ' });
+    }
+    await redis.del(`verificationCode:${email}`);
+    const verificationCode = Math.floor(
+      100000 + Math.random() * 900000
+    ).toString();
+    await redis.set(
+      `verificationCode:${email}`,
+      verificationCode,
+      'EX',
+      15 * 60
+    );
+    isDevelopment
+      ? await sendVerificationEmail(email, verificationCode)
+      : console.log(
+          `🔄 New Verification code for ${email}: ${verificationCode}`
+        );
+    res
+      .status(200)
+      .json({ message: 'New verification code sent to your email' });
+  } catch (error) {
+    console.log('❌ Error in resendVerificationCode:', error);
+    return res.status(500).json(error);
   }
 };
 export const verify = async (req, res) => {
@@ -96,7 +135,12 @@ export const verify = async (req, res) => {
     setRefreshCookie(res, refreshToken);
 
     await redis.del(`verificationCode:${email}`);
-    await sendWelcomeEmail(email, user.username);
+    isDevelopment
+      ? await sendWelcomeEmail(email, user.username)
+      : console.log(
+          `🎉 Welcome email sent to ${email} and his is the your token ${accessToken}`
+        );
+
     res.status(200).json({
       message: 'Email verified successfully',
       accessToken: accessToken,
@@ -113,18 +157,21 @@ export const UploadProfile = async (req, res) => {
   // const imge_p = req.file?.path || null;
 
   const email = req.user.email;
-  const bio = req.body.bio?.trim();
+  // const bio = req.body.bio?.trim();
 
   const img_user = req.files?.img_user?.[0]?.path || null;
   const p_img = req.files?.p_img?.[0]?.path || null;
+
+  console.log('this is the img profile :', p_img);
+  console.log('this is the img user :', img_user);
   try {
     const Verify = await db.query(
       'SELECT img_user,p_img FROM  project02.users WHERE email=$1',
       [email]
     );
     const user = await db.query(
-      'UPDATE project02.users SET img_user=COALESCE($1,img_user),p_img=COALESCE($2,p_img),bio=COALESCE($3,bio) WHERE email=$4 RETURNING *',
-      [img_user, p_img, bio, email]
+      'UPDATE project02.users SET img_user=COALESCE($1,img_user),p_img=COALESCE($2,p_img) WHERE email=$3 RETURNING *',
+      [img_user, p_img, email]
     );
     if (!user.rows[0] || !user.rows[0].is_verified) {
       return res.status(400).json({ error: 'User not found or not verified' });
@@ -132,11 +179,11 @@ export const UploadProfile = async (req, res) => {
 
     if (user.rows[0].img_user && Verify.rows[0].img_user) {
       const publicId = GetPublicId(Verify.rows[0].img_user);
-      cloudinary.uploader.destroy(publicId);
+      await cloudinary.uploader.destroy(publicId);
     }
     if (user.rows[0].p_img && Verify.rows[0].p_img) {
       const publicId = GetPublicId(Verify.rows[0].p_img);
-      cloudinary.uploader.destroy(publicId);
+      await cloudinary.uploader.destroy(publicId);
     }
 
     const { password, ...userWithoutPassword } = user.rows[0];
@@ -173,11 +220,18 @@ export const login = async (req, res) => {
       id: user.id_user,
       email: user.email,
     };
-    console.log('this is login : ', payload);
+
     const accessToken = generateAccessToken(payload);
     const refreshToken = generateRefreshToken(payload);
     setRefreshCookie(res, refreshToken);
-    res.status(201).json({ accessToken });
+
+    isDevelopment
+      ? await sendWelcomeEmail(email, user.username)
+      : console.log(
+          `🎉 Welcome again email : ${email} and his token ${accessToken}`
+        );
+
+    res.status(201).json({ accessToken, id: user.id_user });
   } catch (error) {
     process.env.NODE_ENV === 'development' &&
       console.log('❌ Error in login:', error);
@@ -228,7 +282,9 @@ export const forgotPassword = async (req, res) => {
     const resetToken = crypto.randomBytes(20).toString('hex');
     await redis.set(`forgotPassword:${email}`, resetToken, 'EX', 3600);
 
-    await sendPasswordResetEmail(user.email, resetToken);
+    isDevelopment
+      ? await sendPasswordResetEmail(user.email, resetToken)
+      : console.log(`🔄 Password reset token for ${email} : ${resetToken}`);
 
     return res.status(200).json({
       message: 'Password reset link sent to your email',
