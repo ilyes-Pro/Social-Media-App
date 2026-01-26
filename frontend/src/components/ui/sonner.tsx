@@ -26,7 +26,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
         {
           '--normal-border': '0',
 
-          '--success-bg': '#ffffff',
+          '--success-bg': 'var(--color-bg)',
           '--success-text': '#4ade80',
           '--success-border': 'none',
           '--error-bg': ' var(--color-bg)',

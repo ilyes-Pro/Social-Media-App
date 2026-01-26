@@ -1,6 +1,6 @@
 import { Navigate, Outlet } from 'react-router-dom';
 
-function ProtectedRoute({ isAllowed, redirectPath = '/' }) {
+export function ProtectedRoute({ isAllowed, redirectPath = '/' }) {
   if (!isAllowed) {
     // alert("you can't enter this page ,go away bitch");
     return <Navigate to={redirectPath} replace />;
@@ -8,4 +8,6 @@ function ProtectedRoute({ isAllowed, redirectPath = '/' }) {
   return <Outlet />;
 }
 
-export default ProtectedRoute;
+export function GuestRoute({ isAllowed }) {
+  return isAllowed ? <Navigate to="/MainPage" replace /> : <Outlet />;
+}

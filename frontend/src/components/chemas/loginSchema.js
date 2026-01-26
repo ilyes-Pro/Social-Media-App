@@ -45,3 +45,13 @@ export const SignUpchema = z
     message: 'Passwords do not match',
     path: ['confirmPassword'],
   });
+
+export const resetPasswordF = z
+  .object({
+    password,
+    confirmPassword,
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  });

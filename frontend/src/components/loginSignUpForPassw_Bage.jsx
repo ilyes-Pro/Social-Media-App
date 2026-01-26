@@ -1,13 +1,13 @@
 //API
 import useAuthStore from '../Store/AuthStore';
-
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 // LoginBage.jsx
 import VerifyEmail from './VerifyEmail';
 import ProfleImge from './ProfleImge';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { toast } from 'sonner';
 import { Spinner } from './ui/spinner';
-import cover from '../assets/soft_abstract_gradient_background_for_modern_ui.png';
 import {
   Lock,
   Eye,
@@ -49,9 +49,11 @@ export default function LoginSignUpForPassw_Bage() {
     verifyEmail,
     token,
     resendVerificationCode,
+    forgetPassword,
   } = useAuthStore();
 
   const navigate = useNavigate();
+  const [showCheckMark, setShowCheckMark] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [mod, setMode] = useState('login');
   const [Data, setData] = useState(''); // 'login' or 'signup'
@@ -84,10 +86,11 @@ export default function LoginSignUpForPassw_Bage() {
 
   const onSubmit = async (data, e) => {
     setData(data);
+
     const action = e.nativeEvent.submitter.value;
     console.log('the action is ', action);
 
-    if (action === 'login') {
+    if (action === 'login' && open.openFP === false) {
       console.log(`${mod} data:`, data);
       const handlers = {
         login,
@@ -100,7 +103,7 @@ export default function LoginSignUpForPassw_Bage() {
           result.success ? 'Event has been created' : result.message
         );
 
-        if (mod === 'signup') {
+        if (mod === 'signup' && result.success) {
           setOpen((prev) => ({ ...prev, openVerifyEmail: true }));
         }
       }
@@ -129,6 +132,16 @@ export default function LoginSignUpForPassw_Bage() {
       //   }
       // }
     }
+
+    if (open.openFP === true) {
+      localStorage.setItem('forgetPassword', data.email);
+      const result = await forgetPassword({ email: data.email });
+      toast[result.success ? 'success' : 'error'](
+        result.success ? 'the link is Sent to you Email' : result.message
+      );
+      setShowCheckMark(result.success);
+    }
+
     if (action === 'SentAgin') {
       const result = await resendVerificationCode({ email: Data.email });
 
@@ -152,8 +165,10 @@ export default function LoginSignUpForPassw_Bage() {
     if (!open.openVerifyEmail) {
       if (open.openFP) {
         setOpen((prev) => ({ ...prev, openFP: false }));
+        setMode(mod === 'login' ? 'login' : 'signup');
+      } else {
+        setMode(mod === 'login' ? 'signup' : 'login');
       }
-      setMode(mod === 'login' ? 'signup' : 'login');
     }
   }
   useEffect(() => {
@@ -161,16 +176,22 @@ export default function LoginSignUpForPassw_Bage() {
   }, [open.openProfileImge]);
 
   return (
-    <div
-      className="min-h-screen bg-cover bg-center "
-      style={{ backgroundImage: `url(${cover})` }}
-    >
-      <div className="flex justify-center items-center h-[100vh]">
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={mod + open.openVerifyEmail + open.openFP + open.openProfileImge}
+        initial={{ opacity: 0, y: 20, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: -20, scale: 0.97 }}
+        transition={{ duration: 0.3 }}
+        className="w-full flex justify-center items-center  "
+      >
         <Card
-          className={`w-full max-w-md max-sm:max-w-sm ${
-            !open.openProfileImge
-              ? mod == 'signup' && '!py-2 !gap-5'
-              : '!p-0 !gap-5'
+          className={`w-full max-w-md max-sm:max-w-sm relative ${
+            !showCheckMark
+              ? !open.openProfileImge
+                ? mod == 'signup' && '!py-2 !gap-6 !my-5'
+                : '!p-0 !gap-5'
+              : 'gap-0'
           }`}
         >
           {!open.openProfileImge ? (
@@ -186,209 +207,230 @@ export default function LoginSignUpForPassw_Bage() {
                       ? 'Verify Email'
                       : 'Create Account'}
                 </CardTitle>
+
                 <CardDescription>
-                  {open.openFP
-                    ? 'Enter your email to reset your password'
-                    : open.openVerifyEmail
-                      ? 'Please verify your email to continue'
-                      : mod === 'login'
-                        ? 'Enter your email below to login to your account'
-                        : 'Fill the form below to create an account'}
+                  {!showCheckMark
+                    ? open.openFP
+                      ? 'Enter your email to reset your password'
+                      : open.openVerifyEmail
+                        ? 'Please verify your email to continue'
+                        : mod === 'login'
+                          ? 'Enter your email below to login to your account'
+                          : 'Fill the form below to create an account'
+                    : 'Check your Email'}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit(onSubmit)}>
-                  {!open.openVerifyEmail ? (
-                    <div
-                      className={`flex flex-col ${
-                        mod == 'signup' ? 'gap-5' : 'gap-7'
-                      }`}
-                    >
-                      {/* Signup fields */}
-                      {mod === 'signup' && (
-                        <>
-                          {/* Full Name */}
+              {showCheckMark ? (
+                <DotLottieReact
+                  src="https://lottie.host/e1a78101-f665-47bb-acd2-dcd1b134bbe9/AoRhzLSCDK.lottie"
+                  autoplay
+                />
+              ) : (
+                <>
+                  <CardContent>
+                    <form onSubmit={handleSubmit(onSubmit)}>
+                      {!open.openVerifyEmail ? (
+                        <div
+                          className={`flex flex-col ${
+                            mod == 'signup' ? 'gap-5' : 'gap-7'
+                          }`}
+                        >
+                          {/* Signup fields */}
+                          {mod === 'signup' && (
+                            <>
+                              {/* Full Name */}
+                              <div className="grid gap-2">
+                                <Label htmlFor="fullname">Full name</Label>
+                                <div className="relative">
+                                  <User className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                                  <Input
+                                    id="fullname"
+                                    placeholder="Your name"
+                                    {...register('fullname')}
+                                  />
+                                </div>
+                                {errors.fullname && (
+                                  <Label className="text-red-500 text-sm">
+                                    {errors.fullname.message}
+                                  </Label>
+                                )}
+                              </div>
+
+                              {/* Username */}
+                              <div className="grid gap-2">
+                                <Label htmlFor="username">Username</Label>
+                                <div className="relative">
+                                  <Contact className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                                  <Input
+                                    id="username"
+                                    placeholder="Your username"
+                                    {...register('username')}
+                                  />
+                                </div>
+                                {errors.username && (
+                                  <Label className="text-red-500 text-sm">
+                                    {errors.username.message}
+                                  </Label>
+                                )}
+                              </div>
+                            </>
+                          )}
+
+                          {/* Email */}
+
                           <div className="grid gap-2">
-                            <Label htmlFor="fullname">Full name</Label>
+                            <Label htmlFor="email">Email</Label>
                             <div className="relative">
-                              <User className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                              <Mail className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
                               <Input
-                                id="fullname"
-                                placeholder="Your name"
-                                {...register('fullname')}
+                                id="email"
+                                placeholder="name@gmail.com"
+                                {...register('email')}
                               />
                             </div>
-                            {errors.fullname && (
+                            {errors.email && (
                               <Label className="text-red-500 text-sm">
-                                {errors.fullname.message}
+                                {errors.email.message}
                               </Label>
                             )}
                           </div>
 
-                          {/* Username */}
-                          <div className="grid gap-2">
-                            <Label htmlFor="username">Username</Label>
-                            <div className="relative">
-                              <Contact className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                              <Input
-                                id="username"
-                                placeholder="Your username"
-                                {...register('username')}
-                              />
+                          {/* Password */}
+                          {!open.openFP && (
+                            <div className="grid gap-2">
+                              <div className="flex justify-between">
+                                <Label htmlFor="password">Password</Label>
+                                {mod === 'login' && (
+                                  <button
+                                    type="button"
+                                    className="ml-auto text-xs underline-offset-4 hover:underline text-puttom"
+                                    onClick={() =>
+                                      setOpen((prev) => ({
+                                        ...prev,
+                                        openFP: true,
+                                      }))
+                                    }
+                                  >
+                                    Forgot your password?
+                                  </button>
+                                )}
+                              </div>
+
+                              <div className="relative">
+                                <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                                <Input
+                                  id="password"
+                                  type={showPassword ? 'text' : 'password'}
+                                  {...register('password')}
+                                />
+                                <button
+                                  type="button"
+                                  className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground"
+                                  onClick={() => setShowPassword(!showPassword)}
+                                >
+                                  {showPassword ? <Eye /> : <EyeOff />}
+                                </button>
+                              </div>
+                              {errors.password && (
+                                <Label className="text-red-500 text-sm">
+                                  {errors.password.message}
+                                </Label>
+                              )}
                             </div>
-                            {errors.username && (
-                              <Label className="text-red-500 text-sm">
-                                {errors.username.message}
+                          )}
+
+                          {/* Confirm Password */}
+                          {mod === 'signup' && (
+                            <div className="grid gap-2">
+                              <Label htmlFor="confirmPassword">
+                                Confirm Password
                               </Label>
+                              <div className="relative">
+                                <ShieldCheck className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                                <Input
+                                  id="confirmPassword"
+                                  type="password"
+                                  {...register('confirmPassword')}
+                                />
+                              </div>
+                              {errors.confirmPassword && (
+                                <Label className="text-red-500 text-sm">
+                                  {errors.confirmPassword.message}
+                                </Label>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <VerifyEmail Data={Data} />
+                      )}
+                      {!open.openVerifyEmail && (
+                        <CardFooter className="!mt-5">
+                          <Button
+                            type="submit"
+                            className="w-full"
+                            value="login"
+                          >
+                            {!loading ? (
+                              !open.openFP ? (
+                                mod === 'login' ? (
+                                  'Login'
+                                ) : (
+                                  'Sign Up'
+                                )
+                              ) : (
+                                'Send Reset Link'
+                              )
+                            ) : (
+                              <Spinner className="size-6 text-bg" />
                             )}
-                          </div>
+                          </Button>
+                        </CardFooter>
+                      )}
+                    </form>
+                  </CardContent>
+
+                  {!open.openVerifyEmail && (
+                    <CardDescription>
+                      {!open.openFP ? (
+                        <>
+                          {mod === 'login'
+                            ? "Don't have an account?"
+                            : 'Already have an account?'}
+
+                          <Button
+                            variant="link"
+                            className="text-puttom cursor-pointer"
+                            onClick={handlechange_Sign_log}
+                          >
+                            {!open.openVerifyEmail
+                              ? mod === 'login'
+                                ? ' Sign Up'
+                                : ' Login'
+                              : ' sent agin'}
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button
+                            variant="link"
+                            className="text-puttom cursor-pointer"
+                            onClick={handlechange_Sign_log}
+                          >
+                            Back to Login
+                          </Button>
                         </>
                       )}
-
-                      {/* Email */}
-                      <div className="grid gap-2">
-                        <Label htmlFor="email">Email</Label>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                          <Input
-                            id="email"
-                            placeholder="name@gmail.com"
-                            {...register('email')}
-                          />
-                        </div>
-                        {errors.email && (
-                          <Label className="text-red-500 text-sm">
-                            {errors.email.message}
-                          </Label>
-                        )}
-                      </div>
-
-                      {/* Password */}
-                      {!open.openFP && (
-                        <div className="grid gap-2">
-                          <div className="flex justify-between">
-                            <Label htmlFor="password">Password</Label>
-                            {mod === 'login' && (
-                              <button
-                                type="button"
-                                className="ml-auto text-xs underline-offset-4 hover:underline text-puttom"
-                                onClick={() =>
-                                  setOpen((prev) => ({ ...prev, openFP: true }))
-                                }
-                              >
-                                Forgot your password?
-                              </button>
-                            )}
-                          </div>
-
-                          <div className="relative">
-                            <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                            <Input
-                              id="password"
-                              type={showPassword ? 'text' : 'password'}
-                              {...register('password')}
-                            />
-                            <button
-                              type="button"
-                              className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground"
-                              onClick={() => setShowPassword(!showPassword)}
-                            >
-                              {showPassword ? <Eye /> : <EyeOff />}
-                            </button>
-                          </div>
-                          {errors.password && (
-                            <Label className="text-red-500 text-sm">
-                              {errors.password.message}
-                            </Label>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Confirm Password */}
-                      {mod === 'signup' && (
-                        <div className="grid gap-2">
-                          <Label htmlFor="confirmPassword">
-                            Confirm Password
-                          </Label>
-                          <div className="relative">
-                            <ShieldCheck className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                            <Input
-                              id="confirmPassword"
-                              type="password"
-                              {...register('confirmPassword')}
-                            />
-                          </div>
-                          {errors.confirmPassword && (
-                            <Label className="text-red-500 text-sm">
-                              {errors.confirmPassword.message}
-                            </Label>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <VerifyEmail Data={Data} />
+                    </CardDescription>
                   )}
-                  {!open.openVerifyEmail && (
-                    <CardFooter className="!mt-5">
-                      <Button type="submit" className="w-full" value="login">
-                        {!loading ? (
-                          !open.openFP ? (
-                            mod === 'login' ? (
-                              'Login'
-                            ) : (
-                              'Sign Up'
-                            )
-                          ) : (
-                            'Send Reset Link'
-                          )
-                        ) : (
-                          <Spinner className="size-6 text-bg" />
-                        )}
-                      </Button>
-                    </CardFooter>
-                  )}
-                </form>
-              </CardContent>
-              {!open.openVerifyEmail && (
-                <CardDescription>
-                  {!open.openFP ? (
-                    <>
-                      {mod === 'login'
-                        ? "Don't have an account?"
-                        : 'Already have an account?'}
-
-                      <Button
-                        variant="link"
-                        className="text-puttom cursor-pointer"
-                        onClick={handlechange_Sign_log}
-                      >
-                        {!open.openVerifyEmail
-                          ? mod === 'login'
-                            ? ' Sign Up'
-                            : ' Login'
-                          : ' sent agin'}
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Button
-                        variant="link"
-                        className="text-puttom cursor-pointer"
-                        onClick={handlechange_Sign_log}
-                      >
-                        Back to Login
-                      </Button>
-                    </>
-                  )}
-                </CardDescription>
+                </>
               )}
             </>
           ) : (
             <ProfleImge />
           )}
         </Card>
-      </div>
-    </div>
+      </motion.div>
+    </AnimatePresence>
   );
 }

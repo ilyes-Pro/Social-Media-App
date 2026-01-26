@@ -11,11 +11,17 @@ import { Button } from './ui/button';
 import '../App.css';
 import { toast } from 'sonner';
 import { Pen, BadgeCheck, BadgeInfo, Upload } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
+
 import useAuthStore from '../Store/AuthStore';
+
+import useUserStore from '../Store/usersStore';
+
 import { Spinner } from './ui/spinner';
+
 export default function ProfleImge() {
-  const { loading, token, UploadProfile } = useAuthStore();
+  const { loading, user, UploadProfile } = useAuthStore();
+  const { ShowUser, dataUser } = useUserStore();
   const [showPen, setShowPen] = useState({ firstPen: false, secondPen: false });
   const [showImgUpload, setShowImgUpload] = useState({
     imgProfile: null,
@@ -24,6 +30,11 @@ export default function ProfleImge() {
 
   const inputeRefProfile = useRef(null);
   const inputeRefCover = useRef(null);
+
+  useEffect(() => {
+    ShowUser({ id: user.id });
+    console.log('dataUser is fak biiiiitch:', dataUser);
+  }, [user]);
 
   const handleUploadImage = (e, type) => {
     const file = e.target.files[0];
@@ -39,7 +50,7 @@ export default function ProfleImge() {
     const result = await UploadProfile({
       img_user: showImgUpload.imgProfile,
       p_img: showImgUpload.imgCover,
-      token,
+      token: user.token,
     });
 
     toast[result.success ? 'success' : 'error'](
@@ -114,8 +125,8 @@ export default function ProfleImge() {
         </Avatar>
       </div>
       <CardHeader className="!mt-10 ">
-        <CardTitle>ilyes ouhssine</CardTitle>
-        <CardDescription>ilyesouhssine@gmail.com</CardDescription>
+        <CardTitle>{dataUser?.fullname}</CardTitle>
+        <CardDescription>{dataUser?.email}</CardDescription>
       </CardHeader>
 
       <CardContent className="!mt-6">

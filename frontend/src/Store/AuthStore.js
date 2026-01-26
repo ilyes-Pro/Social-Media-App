@@ -4,7 +4,12 @@ import axios from 'axios';
 const API_URL = 'http://localhost:5000/api/auth';
 
 const AuthStore = create((set) => ({
-  token: null,
+  user: {
+    id: null,
+    token: null,
+  },
+  // email: '', // قيمة مشتركة
+  // setEmail: (newEmail) => set({ email: newEmail }),
   loading: false,
   statusUser: {
     statusUS: false,
@@ -19,12 +24,16 @@ const AuthStore = create((set) => ({
         password,
       });
 
-      set({
-        token: response.data,
-        statusUser: {
-          statusUS: true,
-        },
-      });
+      set((state) => ({
+        // user: {
+        //   ...state.user, // هنا state معرف
+        //   token: response.data.accessToken,
+        //   email, // نخزن البريد هنا
+        // },
+        user: { id: response.data.id, token: response.data.accessToken },
+        statusUser: { statusUS: true },
+      }));
+
       return { success: true };
       // logoutTimer = setTimeout(() => {
       //   set({ user: null, statusUser: { messageErr: '', statusUS: true } });
@@ -80,9 +89,11 @@ const AuthStore = create((set) => ({
         email,
         code,
       });
-      set({
-        token: response.data.accessToken,
-      });
+
+      // set((state) => ({
+      //   user: { ...state.user, token: response.data.accessToken },
+      // }));
+      set({ user: { id: response.data.id, token: response.data.accessToken } });
       return { success: true };
       // logoutTimer = setTimeout(() => {
       //   set({ user: null, statusUser: { messageErr: '', statusUS: true } });
@@ -117,6 +128,7 @@ const AuthStore = create((set) => ({
       set({ loading: false });
     }
   },
+
   UploadProfile: async ({ img_user, p_img, token }) => {
     try {
       console.log('this is the token :', token);
@@ -138,6 +150,59 @@ const AuthStore = create((set) => ({
         statusUser: {
           statusUS: true,
         },
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.error('Upload error:', error.response?.data?.error);
+
+      return {
+        success: false,
+        message: error.response?.data?.error || 'Server error',
+      };
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  forgetPassword: async ({ email }) => {
+    try {
+      console.log('the bitch:', email);
+      set({ loading: true });
+
+      const response = await axios.post(`${API_URL}/forgotPassword`, {
+        email,
+      });
+
+      console.log('Email in store now  fffak:', AuthStore.getState().email);
+      return { success: true };
+    } catch (error) {
+      console.error('Upload error:', error.response?.data?.error);
+
+      return {
+        success: false,
+        message: error.response?.data?.error || 'Server error',
+      };
+    } finally {
+      set({ loading: false });
+    }
+  },
+
+  resetPassword: async ({ email, password, token }) => {
+    console.log(
+      'Reset Password called with email:',
+      email,
+      'token:',
+      token,
+      'password:',
+      password
+    );
+    try {
+      set({ loading: true });
+
+      const response = await axios.patch(`${API_URL}/resetPassword/${token}`, {
+        email,
+        password,
       });
 
       return { success: true };

@@ -56,7 +56,7 @@ export const sendPasswordResetEmail = async (email, token) => {
     <div style="font-family: Arial, sans-serif; text-align: center;">
       <h2>Reset your password</h2>
       <p>Your password reset token is:</p>
-      <h1 style="letter-spacing: 4px;">${token}</h1>
+      <h1 style="letter-spacing: 4px;"> ${process.env.FRONTEND_URL}/resetPassword/${token} </h1>
     
     </div>
   `;

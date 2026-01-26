@@ -143,6 +143,7 @@ export const verify = async (req, res) => {
 
     res.status(200).json({
       message: 'Email verified successfully',
+      id: user.id_user,
       accessToken: accessToken,
     });
   } catch (error) {
@@ -284,7 +285,9 @@ export const forgotPassword = async (req, res) => {
 
     isDevelopment
       ? await sendPasswordResetEmail(user.email, resetToken)
-      : console.log(`🔄 Password reset token for ${email} : ${resetToken}`);
+      : console.log(
+          `🔄 Password reset token for ${email} : ${process.env.FRONTEND_URL}/resetPassword/${resetToken}`
+        );
 
     return res.status(200).json({
       message: 'Password reset link sent to your email',
