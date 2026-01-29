@@ -19,14 +19,32 @@ function App() {
     <>
       <Toaster richColors position="bottom-right" />
       <Routes>
-        <Route element={<GuestRoute isAllowed={statusUser.statusUS} />}>
+        <Route
+          element={
+            <GuestRoute
+              isAllowed={
+                true
+                // statusUser.statusUS
+              }
+            />
+          }
+        >
           <Route path="/" element={<AuthPage />}>
             <Route index element={<LoginSignUpForPassw_Bage />} />
             <Route path="resetPassword/:token" element={<ResetPassword />} />
           </Route>
         </Route>
 
-        <Route element={<ProtectedRoute isAllowed={statusUser.statusUS} />}>
+        <Route
+          element={
+            <ProtectedRoute
+              isAllowed={
+                true
+                // statusUser.statusUS
+              }
+            />
+          }
+        >
           <Route path="/MainPage" element={<MainPage />} />
         </Route>
       </Routes>

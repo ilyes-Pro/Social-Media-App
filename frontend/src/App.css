@@ -31,8 +31,9 @@
   --color-secand: #6b7290;
   --breakpoint-xs: 30rem;
   --color-puttom: #991eff;
-  --color-bg: #e7eefa;
+  --color-bg: white;
   --color-text: black;
+  --color-bg2: #fafafa;
   --main-gradientBg: linear-gradient(
     to bottom right,
     #6d28d9,
@@ -42,7 +43,7 @@
 }
 
 :root {
-  --color-bg: #e7eefa;
+  --color-bg: white;
   --color-text: black;
 
   --radius: 0.625rem;
