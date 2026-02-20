@@ -5,11 +5,11 @@ const API_URL = 'http://localhost:5000/api/auth';
 
 const AuthStore = create((set) => ({
   user: {
-    id: null,
-    token: null,
+    id: 35,
+    token:
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MzUsImVtYWlsIjoiaWx5ZXNvdWhzc2luZTg0QGdtYWlsLmNvbSIsImlhdCI6MTc3MTYyNjk4OCwiZXhwIjoxNzcyMjMxNzg4fQ.jyQlxjcxKkf6mDeyImVerSQd-xJlkFCWJsqHrZIgNiY',
   },
-  // email: '', // قيمة مشتركة
-  // setEmail: (newEmail) => set({ email: newEmail }),
+
   loading: false,
   statusUser: {
     statusUS: false,

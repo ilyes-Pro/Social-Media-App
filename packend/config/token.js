@@ -2,8 +2,9 @@ import jwt from 'jsonwebtoken';
 
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
-const ACCESS_TOKEN_TTL = process.env.ACCESS_TOKEN_TTL || '15m'; // مثال
-const REFRESH_TOKEN_TTL_DAYS = process.env.REFRESH_TOKEN_TTL_DAYS || 7; // 7 أيام افتراضيًا
+const ACCESS_TOKEN_TTL =
+  process.env.MODE_ENV === 'production' ? process.env.ACCESS_TOKEN_TTL : '7d';
+const REFRESH_TOKEN_TTL_DAYS = process.env.REFRESH_TOKEN_TTL_DAYS || 7;
 
 // 🔹 توليد access token
 export const generateAccessToken = (user) =>

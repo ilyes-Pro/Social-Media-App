@@ -17,9 +17,18 @@ import {
   CirclePlus,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import Profiler from './Profile';
 import PuttomGrop from './PuttomGrop';
 
+import useUsersStore from '../../Store/usersStore';
+import { useEffect } from 'react';
+
 export default function Sidebarr({ ButtomSide, activeP, setActiveP }) {
+  const { ShowUser, dataUser } = useUsersStore();
+
+  useEffect(() => {
+    ShowUser();
+  }, []);
   return (
     <SidebarProvider>
       <div className="bg-bg ">
@@ -56,20 +65,12 @@ export default function Sidebarr({ ButtomSide, activeP, setActiveP }) {
             </SidebarGroup>
           </SidebarContent>
 
-          <SidebarFooter className="flex justify-start items-center flex-row border-t-1 gap-3 !pt-3 ">
-            <Avatar>
-              <AvatarImage
-              // src="https://github.com/shadcn.png"
-              />
-              <AvatarFallback>CN</AvatarFallback>
-            </Avatar>
-            <div>
-              <h3 className="text-sm font-bold">
-                ilyes ouhssine <br />
-                <span className="text-xs font-normal text-secand">@ilysoo</span>
-              </h3>
-            </div>
-            <LogOut className="flex-1 cursor-pointer text-secand" size={19} />
+          <SidebarFooter>
+            <Profiler
+              profileImg={dataUser?.p_img}
+              name={dataUser?.fullname}
+              userName={dataUser?.username}
+            />
           </SidebarFooter>
         </Sidebar>
       </div>

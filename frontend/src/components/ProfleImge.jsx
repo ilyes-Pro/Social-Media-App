@@ -20,7 +20,7 @@ import useUserStore from '../Store/usersStore';
 import { Spinner } from './ui/spinner';
 
 export default function ProfleImge() {
-  const { loading, user, UploadProfile } = useAuthStore();
+  const { loading, UploadProfile } = useAuthStore();
   const { ShowUser, dataUser } = useUserStore();
   const [showPen, setShowPen] = useState({ firstPen: false, secondPen: false });
   const [showImgUpload, setShowImgUpload] = useState({
@@ -32,9 +32,9 @@ export default function ProfleImge() {
   const inputeRefCover = useRef(null);
 
   useEffect(() => {
-    ShowUser({ id: user.id });
+    ShowUser();
     console.log('dataUser is fak biiiiitch:', dataUser);
-  }, [user]);
+  }, []);
 
   const handleUploadImage = (e, type) => {
     const file = e.target.files[0];

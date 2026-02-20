@@ -77,7 +77,7 @@ export default function MobileNav({
       <div className="w-full h-18 fixed bg-bg bottom-0 right-0">
         <Button
           variant="destructive"
-          className="w-full mt-4 h-11 text-md size-14 !rounded-4xl absolute left-1/2 -translate-1/2 cursor-pointer "
+          className="w-full mt-4 h-11 text-md size-14 !rounded-4xl absolute left-1/2 -translate-1/2 cursor-pointer z-30"
         >
           <CirclePlus size={40} />
         </Button>
