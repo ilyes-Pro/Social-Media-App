@@ -25,11 +25,13 @@ export default function CardePoat({
   countLike,
   CountComment,
   TagPost,
+  liked,
 }) {
-  const [like, setLike] = useState(false);
+  const [like, setLike] = useState(liked);
   const [likeCont, setLikeCont] = useState(countLike);
   const [likeList, setLikeList] = useState(false);
   const [comment, setComment] = useState(false);
+  const [commentCont, setCommentCont] = useState(CountComment);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const { AddLikeDislike } = useLikeStore();
   useEffect(() => {
@@ -93,7 +95,7 @@ export default function CardePoat({
                 onClick={() => setComment(true)}
               />
               <p className="transition-colors duration-100 ease-in-out group-hover:text-blue-500 text-sm max-md:text-xs">
-                {CountComment}
+                {commentCont}
               </p>
             </div>
           </div>
@@ -111,9 +113,19 @@ export default function CardePoat({
       </Card>
       <ListLike open={likeList} idPost={idPost} setOpen={setLikeList} />
       {isMobile ? (
-        <CommentPhone isOpen={comment} setIsOpen={setComment} />
+        <CommentPhone
+          isOpen={comment}
+          setIsOpen={setComment}
+          idPost={idPost}
+          setCommentCont={setCommentCont}
+        />
       ) : (
-        <Comment open={comment} setOpen={setComment} />
+        <Comment
+          open={comment}
+          setOpen={setComment}
+          idPost={idPost}
+          setCommentCont={setCommentCont}
+        />
       )}
     </div>
   );

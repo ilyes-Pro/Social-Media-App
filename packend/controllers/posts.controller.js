@@ -120,6 +120,7 @@ export const createPost = async (req, res) => {
 export const getAllPosts = async (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
   const page = parseInt(req.query.page) || 1;
+  const id_user = req.user.id_user;
 
   try {
     // 🧮 1. احسب عدد المنشورات الكلي
@@ -190,13 +191,22 @@ export const getAllPosts = async (req, res) => {
 
     const Rlike = await db.query(
       `
-      SELECT id_post, COUNT(*) AS likes
-      FROM project02.likes
-      WHERE id_post = ANY($1)
-      GROUP BY id_post
+      SELECT 
+  id_post,
+  COUNT(*) AS likes,
+  BOOL_OR(id_user = $2) AS liked
+FROM project02.likes
+WHERE id_post = ANY($1)
+GROUP BY id_post
       `,
-      [postIds]
+      [postIds, id_user]
     );
+    //   EXISTS (
+    //   SELECT 1
+    //   FROM project02.likes l2
+    //   WHERE l2.id_post = l.id_post
+    //     AND l2.id_user = $2
+    // ) AS liked
 
     // 🧩 6. دمج النتائج في كائن موحّد
     const postMap = result.rows.map((a) => ({
@@ -216,6 +226,7 @@ export const getAllPosts = async (req, res) => {
         Rcomments.rows.find((c) => c.id_post === a.id_post)?.comment_count || 0,
       tags: Rtags.rows.find((t) => t.id_post === a.id_post)?.tags || [],
       like: Rlike.rows.find((c) => c.id_post === a.id_post)?.likes || 0,
+      liked: Rlike.rows.find((c) => c.id_post === a.id_post)?.liked || false,
     }));
 
     // 📦 7. إرسال النتيجة النهائية مع بيانات الـ pagination

@@ -19,7 +19,7 @@ router.post(
 );
 router.get(
   '/getPost',
-
+  passport.authenticate('jwt', { session: false }),
   getAllPosts
 );
 

@@ -25,6 +25,7 @@ export default function Sidebar() {
               ImgPost={post?.img_post}
               countLike={post?.like}
               CountComment={post?.comments_count}
+              liked={post?.liked}
               TagPost={post?.tags}
             />
           ))

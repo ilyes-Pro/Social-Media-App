@@ -1,13 +1,33 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Input } from '../ui/input';
 
-const comments = 14;
+// const comments = 14;
 import { SendHorizontal } from 'lucide-react';
+import useCommentsStore from '../../Store/commentsStore';
 
-export default function CommentPhone({ isOpen, setIsOpen }) {
+export default function CommentPhone({
+  isOpen,
+  setIsOpen,
+  idPost,
+  setCommentCont,
+}) {
+  const { loading, DataComments, ShowAllComments, CreatComments } =
+    useCommentsStore();
+  const [commentInput, setCommentInput] = useState('');
+
+  const addComment = () => {
+    CreatComments({ idPost, body_comment: commentInput, setCommentCont });
+    setCommentInput('');
+  };
+  useEffect(() => {
+    if (isOpen) {
+      ShowAllComments(idPost);
+    }
+  }, [isOpen, idPost, DataComments]);
+
   const openSlider = () => setIsOpen(true);
   const closeSlider = () => setIsOpen(false);
 
@@ -36,23 +56,23 @@ export default function CommentPhone({ isOpen, setIsOpen }) {
               </div>
 
               <div className=" !h-[calc(79vh)] overflow-y-auto px-4 !pl-4 flex flex-col gap-4 ">
-                {Array.from({ length: comments }).map(() => (
-                  <div className="flex flex-row gap-1 !pr-3">
+                {DataComments?.map((comment) => (
+                  <div
+                    className="flex flex-row gap-1 !pr-3"
+                    key={comment.id_comment}
+                  >
                     <Avatar className="">
-                      <AvatarImage
-                      // src="https://github.com/shadcn.png"
-                      />
-                      <AvatarFallback>CN</AvatarFallback>
+                      <AvatarImage src={comment.author.img_user} />
+                      <AvatarFallback>
+                        {comment.author.fullname.slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
                     </Avatar>
 
                     <div className=" border-2 rounded-md !p-1.5 ">
                       <h3 className={`text-sm font-bold `}>
-                        ilyes ouhssine <br />
+                        {comment.author.fullname} <br />
                         <p className="text-xs font-normal text-secand">
-                          hi My name is ilyes , and I livne in the Us
-                          sdfffffffffffffffffffffffff
-                          sdfffffffffffffffffffffffffsfsfs fsfsdfdsfsssss sdf
-                          random
+                          {comment.body_comment}
                         </p>
                       </h3>
                     </div>
@@ -60,22 +80,22 @@ export default function CommentPhone({ isOpen, setIsOpen }) {
                 ))}
               </div>
 
-              <div className="!h-8 flex justify-start items-center !w-5/5 !px-3 gap-2 mt-3 ">
-                <Avatar className="">
-                  <AvatarImage
-                  // src="https://github.com/shadcn.png"
-                  />
-                  <AvatarFallback>CN</AvatarFallback>
-                </Avatar>
-
-                <div className="relative flex-1">
-                  <SendHorizontal className="absolute right-2 top-2.5 h-5 w-5 text-muted-foreground cursor-pointer" />
-                  <Input
-                    id="username"
-                    placeholder="Comment as ilyes"
-                    className="!p-2 !pr-7.5"
-                  />
-                </div>
+              <div className="relative flex-1">
+                <button
+                  onClick={addComment}
+                  disabled={commentInput.trim() === ''}
+                  className={`absolute right-2 top-2.5 h-5 w-5 text-muted-foreground 
+    ${commentInput.trim() !== '' ? 'cursor-pointer fill-red-700' : 'cursor-not-allowed fill-gray-400'}`}
+                >
+                  <SendHorizontal className="h-5 w-5" />
+                </button>
+                <Input
+                  id="username"
+                  placeholder="Comment as ilyes"
+                  className="!p-2 !pr-7.5"
+                  onChange={(e) => setCommentInput(e.target.value)}
+                  value={commentInput}
+                />
               </div>
             </div>
           </motion.div>

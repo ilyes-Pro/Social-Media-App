@@ -34,7 +34,7 @@ export const getCommentsByPostId = async (req, res) => {
        FROM project02.comments c
        JOIN project02.users u ON c.id_user = u.id_user
        WHERE c.id_post = $1
-       ORDER BY c.created_at ASC
+       ORDER BY c.created_at DESC
        LIMIT $2 OFFSET $3`,
       [id, limit, offset]
     );
