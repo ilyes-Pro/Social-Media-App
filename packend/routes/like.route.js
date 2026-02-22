@@ -12,6 +12,10 @@ router.post(
   passport.authenticate('jwt', { session: false }),
   likePost
 );
-router.get('/showUsersLikesPost/:id', showUsersLikesPost);
+router.get(
+  '/showUsersLikesPost/:id',
+  passport.authenticate('jwt', { session: false }),
+  showUsersLikesPost
+);
 
 export default router;

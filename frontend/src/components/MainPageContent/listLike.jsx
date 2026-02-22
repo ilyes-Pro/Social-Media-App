@@ -39,6 +39,8 @@ export default function ListLike({ open, setOpen, idPost }) {
               userName={user?.username}
               name={user?.fullname}
               profileImg={user?.img_user}
+              friend_status={user?.frindshipe}
+              friend_request_type={user?.friend_request_type}
             />
           ))}
         </div>

@@ -10,8 +10,12 @@ const LikeStore = create((set) => ({
   ShowAllLikeUser: async (id) => {
     try {
       set({ loading: true });
-
-      const response = await axios.get(`${API_URL}/showUsersLikesPost/${id}`);
+      const token = useAuthStore.getState().user.token;
+      const response = await axios.get(`${API_URL}/showUsersLikesPost/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       set({
         DatalikeUser: response.data.likes,

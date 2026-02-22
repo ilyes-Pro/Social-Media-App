@@ -51,6 +51,7 @@ export const likePost = async (req, res) => {
 export const showUsersLikesPost = async (req, res) => {
   try {
     const id_post = parseInt(req.params.id);
+    const id_user = req.user.id_user;
     if (isNaN(id_post)) {
       return res.status(400).json({ message: 'Invalid post ID' });
     }
@@ -68,13 +69,40 @@ export const showUsersLikesPost = async (req, res) => {
     }
 
     const userLikes = await db.query(
-      `SELECT u.id_user, u.username,u.fullname, u.email, u.img_user
-       FROM project02.likes l
-       JOIN project02.users u ON l.id_user = u.id_user
-       WHERE l.id_post = $1
-       ORDER BY l.created_at DESC
-       LIMIT $2 OFFSET $3`,
-      [id_post, limit, offset]
+      `
+  SELECT 
+    u.id_user, 
+    u.username,
+    u.fullname, 
+    u.email, 
+    u.img_user,
+
+    f.status AS friend_status,
+    
+    CASE 
+      WHEN f.id_user = $4 THEN 'sent'
+      WHEN f.id_friend = $4 THEN 'received'
+      ELSE NULL
+    END AS friend_request_type
+
+  FROM project02.likes l
+
+  JOIN project02.users u 
+    ON l.id_user = u.id_user
+
+  LEFT JOIN project02.friendships f
+    ON (
+      (f.id_user = $4 AND f.id_friend = u.id_user)
+      OR
+      (f.id_friend = $4 AND f.id_user = u.id_user)
+    )
+
+  WHERE l.id_post = $1
+
+  ORDER BY l.created_at DESC
+  LIMIT $2 OFFSET $3
+  `,
+      [id_post, limit, offset, id_user]
     );
 
     const totalLikesResult = await db.query(
@@ -93,6 +121,7 @@ export const showUsersLikesPost = async (req, res) => {
     res.status(200).json({
       id_post,
       meta,
+      stausF: userLikes.rows.friend_request_type,
       likes: userLikes.rows,
     });
   } catch (error) {

@@ -9,6 +9,8 @@ export default function Profiler({
   userName,
   name,
   profileImg,
+  friend_status,
+  friend_request_type,
 }) {
   return (
     <div
@@ -37,7 +39,13 @@ export default function Profiler({
           variant="outline"
           className="ml-auto !h-7 !px-3 !text-sm !mr-4 cursor-pointer"
         >
-          Add friend
+          {friend_status
+            ? 'Friend'
+            : friend_request_type == 'sent'
+              ? 'Request Sent'
+              : friend_request_type === 'received'
+                ? 'Accept Request'
+                : 'Add Friend'}
         </Button>
       )}
     </div>

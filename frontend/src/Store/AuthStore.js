@@ -5,9 +5,9 @@ const API_URL = 'http://localhost:5000/api/auth';
 
 const AuthStore = create((set) => ({
   user: {
-    id: 35,
+    id: 119,
     token:
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MzUsImVtYWlsIjoiaWx5ZXNvdWhzc2luZTg0QGdtYWlsLmNvbSIsImlhdCI6MTc3MTYyNjk4OCwiZXhwIjoxNzcyMjMxNzg4fQ.jyQlxjcxKkf6mDeyImVerSQd-xJlkFCWJsqHrZIgNiY',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTE5LCJlbWFpbCI6ImlseXM5MDhAZ21haWwuY29tIiwidXNlcm5hbWUiOiJpbHllc29vb2R4IiwiaWF0IjoxNzcxNzY0NzEzLCJleHAiOjE3NzIzNjk1MTN9.XiSt_q-_tgiFZ-ZL4x79tBqFpU2dDOXKpPDN2YPu-m4',
   },
 
   loading: false,
