@@ -44,7 +44,7 @@ const followeStore = create((set) => ({
     }
   },
 
-  CancelReqSendRec: async (id) => {
+  Unfriend: async (id) => {
     try {
       const token = useAuthStore.getState().user.token;
       set({ loading: true });
