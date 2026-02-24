@@ -14,7 +14,8 @@ import {
   DialogFooter,
   DialogClose,
 } from '../ui/dialog';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+
 export default function Profiler({
   size = 'default',
   id,
@@ -27,18 +28,59 @@ export default function Profiler({
   const { loading, SendReqAcceptriendship, CancelReqSendRec, Unfriend } =
     usefolloweStore();
   const [open, setOpen] = useState(false);
+  const [text, setText] = useState(
+    friend_status
+      ? 'Friend'
+      : friend_request_type == 'sent'
+        ? 'Request Sent'
+        : friend_request_type === 'received'
+          ? 'Accept Request'
+          : 'Add Friend'
+  );
+  const textRef = useRef(null);
+  const friendShip = async () => {
+    if (text == 'Friend') {
+    await  Unfriend({ setText, id })
+      setOpen(false);
+    }
+    if (text == 'Request Sent') {
+      await CancelReqSendRec({ setText, id });
 
+      setOpen(false);
+    }
+     if (text === 'Accept Request'){
+       SendReqAcceptriendship({ setText, id })
+       setOpen(false);
+     }
+  };
   useEffect(() => {
-    console.log('this is friend type ', friend_request_type);
-    console.log('this is friend Status ', friend_status);
-  }, [friend_request_type, friend_status]);
-  const Addfriend = () => {
-    if (friend_status) {
+    console.log('you bitch ', text);
+  }, [text]);
+  const Addfriend = async () => {
+    if (text == 'Friend') {
+      alert('Cancel friend');
       console.log('hi bitch');
       setOpen(true);
     } else {
+      if (text === 'Accept Request') {
+        alert('accept frien sent/ refuse frind sent');
+
+         setOpen(true);
+      } else if (text == 'Request Sent') {
+        alert('sent to refuse sent ');
+        setOpen(true);
+      } else {
+        await SendReqAcceptriendship({ setText, id });
+      }
     }
   };
+
+  const anuliFrind =async()=>{
+ SendReqAcceptriendship({ setText, id })
+       setOpen(false);
+
+
+  }
   return (
     <div
       className={`flex  ${size === 'type2' ? ' justify-between ' : 'justify-start'} items-center flex-row gap-3 !pt-3 ${size === 'default' ? 'border-t-1' : ' '}`}
@@ -66,15 +108,19 @@ export default function Profiler({
           variant="outline"
           className="ml-auto !h-7 !px-3 !text-sm !mr-4 cursor-pointer"
           onClick={Addfriend}
+          
         >
-          {friend_status
-            ? 'Friend'
-            : friend_request_type == 'sent'
-              ? 'Request Sent'
-              : friend_request_type === 'received'
-                ? 'Accept Request'
-                : 'Add Friend'}
+          {text}
         </Button>
+        {text === 'Accept Request' &&   
+          (<Button
+          variant="outline"
+          className="ml-auto !h-7 !px-3 !text-sm !mr-4 cursor-pointer"
+          onClick={anuliFrind}
+         
+        >
+          refuse Request frindShipe
+        </Button>)}
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -82,13 +128,20 @@ export default function Profiler({
           <DialogHeader>
             <DialogTitle>Share link</DialogTitle>
             <DialogDescription>
-              Anyone who has this link will be able to view this.
+              {friend_request_type == 'sent'
+                ? 'do you wont cancel this requet '
+                : ''}
             </DialogDescription>
           </DialogHeader>
 
           <DialogFooter className="sm:justify-start">
-            <DialogClose asChild>
-              <Button type="button">Close</Button>
+            <DialogClose a>
+              <Button type="button" onClick={friendShip}>
+                yes
+              </Button>
+               <Button type="button" >
+               NO
+              </Button>
             </DialogClose>
           </DialogFooter>
         </DialogContent>

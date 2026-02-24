@@ -6,8 +6,9 @@ const API_URL = 'http://localhost:5000/api/friendships';
 const followeStore = create((set) => ({
   loading: false,
 
-  SendReqAcceptriendship: async (id) => {
+  SendReqAcceptriendship: async ({ setText, id }) => {
     try {
+      setText('Request Sent');
       const token = useAuthStore.getState().user.token;
       set({ loading: true });
 
@@ -21,14 +22,17 @@ const followeStore = create((set) => ({
         }
       );
     } catch (error) {
+      setText('Add Friend');
+
       console.error('Login error:', error.response?.data?.error);
     } finally {
       set({ loading: false });
     }
   },
 
-  CancelReqSendRec: async (id) => {
+  CancelReqSendRec: async ({ setText, id }) => {
     try {
+      setText('Add Friend');
       const token = useAuthStore.getState().user.token;
       set({ loading: true });
 
@@ -38,14 +42,17 @@ const followeStore = create((set) => ({
         },
       });
     } catch (error) {
+      setText('Request Sent');
+
       console.error('Login error:', error.response?.data?.error);
     } finally {
       set({ loading: false });
     }
   },
 
-  Unfriend: async (id) => {
+  Unfriend: async ({ setText, id }) => {
     try {
+      setText('Add Friend');
       const token = useAuthStore.getState().user.token;
       set({ loading: true });
 
@@ -55,6 +62,7 @@ const followeStore = create((set) => ({
         },
       });
     } catch (error) {
+      setText('Friend');
       console.error('Login error:', error.response?.data?.error);
     } finally {
       set({ loading: false });
